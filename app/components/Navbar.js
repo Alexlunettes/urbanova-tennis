@@ -4,7 +4,7 @@ import Link           from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState }   from 'react'
 
-const LINKS = [
+const links = [
   { href: '/',         label: 'Inicio'   },
   { href: '/equipos',  label: 'Equipos'  },
   { href: '/grupos',   label: 'Grupos'   },
