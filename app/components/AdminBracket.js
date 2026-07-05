@@ -14,10 +14,8 @@ function emptySetState() {
 }
 
 export default function AdminBracket({ initialEncounters }) {
-  const router   = useRouter()
-  // No local useState for encounters — we use the prop directly so that
-  // router.refresh() (which re-runs the server component) picks up fresh data.
-  const encounters = initialEncounters
+  const router = useRouter()
+  const encounters = initialEncounters   // geen useState, geen useEffect
 
   const [selectedMatchId, setSelectedMatchId] = useState(null)
   const [sets,   setSets]   = useState(emptySetState())
