@@ -1,6 +1,7 @@
 import { supabase }           from '@/lib/supabase'
 import { calculateStandings } from '@/lib/standings'
 import Link                   from 'next/link'
+import RealtimeRefresher from '@/app/components/RealtimeRefresher'
 
 export const revalidate = 0  // Never serve a cached copy — always fetch fresh data
 
@@ -79,6 +80,7 @@ export default async function GruposPage({ searchParams }) {
           ))}
         </div>
       )}
+      <RealtimeRefresher tables={['matches', 'sets']} />
     </main>
   )
 }

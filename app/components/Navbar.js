@@ -4,11 +4,12 @@ import Link           from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState }   from 'react'
 
-const links = [
+const LINKS = [
   { href: '/',         label: 'Inicio'   },
+  { href: '/equipos',  label: 'Equipos'  },
   { href: '/grupos',   label: 'Grupos'   },
   { href: '/partidos', label: 'Partidos' },
-  { href: '/equipos',  label: 'Equipos'  },
+  { href: '/cuadro',   label: 'Cuadro'   },   // ← add this
   { href: '/reglas',   label: 'Reglas'   },
 ]
 

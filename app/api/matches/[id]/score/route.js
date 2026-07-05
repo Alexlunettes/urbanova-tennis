@@ -39,7 +39,7 @@ export async function POST(request, { params }) {
 
   const { data: match, error: fetchError } = await supabaseAdmin
     .from('matches')
-    .select('team1_id, team2_id')
+    .select('team1_id, team2_id, stage')
     .eq('id', id)
     .single()
 
@@ -53,6 +53,22 @@ export async function POST(request, { params }) {
     .from('matches')
     .update({ completed: true, winner_id: winnerId })
     .eq('id', id)
+
+    // If this is a knockout match, propagate winner to knockout_encounters
+    if (match.stage !== 'group_stage' && winnerId) {
+    const { data: ko } = await supabaseAdmin
+        .from('knockout_encounters')
+        .select('id')
+        .eq('match_id', id)
+        .maybeSingle()
+
+    if (ko) {
+        await supabaseAdmin
+        .from('knockout_encounters')
+        .update({ winner_id: winnerId })
+        .eq('id', ko.id)
+    }   
+    }
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })

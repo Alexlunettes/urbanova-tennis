@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import Link         from 'next/link'
+import RealtimeRefresher from '@/app/components/RealtimeRefresher'
 
 export const revalidate = 0
 
@@ -82,6 +83,7 @@ export default async function PartidosPage({ searchParams }) {
           ))}
         </div>
       )}
+      <RealtimeRefresher tables={['sets', 'matches']} />
     </main>
   )
 }
