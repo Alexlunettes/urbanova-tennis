@@ -31,18 +31,32 @@ export default function AdminBracket({ initialEncounters }) {
   }
 
   async function post(url, body) {
-    setLoading(true); setFlash(null)
+  setLoading(true); setFlash(null)
+  try {
     const res  = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-    const data = await res.json()
+    const text = await res.text()          // lees als tekst eerst
+    let data = {}
+    try { data = JSON.parse(text) }        // probeer als JSON
+    catch {
+      // Server stuurde HTML-foutpagina of lege body — toon status
+      setLoading(false)
+      setFlash({ type: 'err', msg: `Server error ${res.status} — check de terminal` })
+      return { ok: false }
+    }
     setLoading(false)
     if (res.ok) { router.refresh(); return { ok: true, data } }
     setFlash({ type: 'err', msg: data.error || 'Error desconocido' })
     return { ok: false }
+  } catch (err) {
+    setLoading(false)
+    setFlash({ type: 'err', msg: err.message || 'Netwerkfout' })
+    return { ok: false }
   }
+}
 
   async function handleSeedBracket(level) {
     const r = await post('/api/bracket/seed', { level })

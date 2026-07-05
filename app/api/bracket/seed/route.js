@@ -32,17 +32,18 @@ function computeGroupSeedings(entries, matches) {
 }
 
 export async function POST(request) {
-  // 1. Auth
-  const cookieStore = await cookies()
-  if (cookieStore.get('admin_session')?.value !== 'authenticated') {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-  }
+  try {
+    // 1. Auth
+    const cookieStore = await cookies()
+    if (cookieStore.get('admin_session')?.value !== 'authenticated') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
 
-  const { level } = await request.json()
-  const lvl = Number(level)
-  if (![1, 2, 3].includes(lvl)) {
-    return NextResponse.json({ error: 'Nivel inválido' }, { status: 400 })
-  }
+    const { level } = await request.json()
+    const lvl = Number(level)
+    if (![1, 2, 3].includes(lvl)) {
+      return NextResponse.json({ error: 'Nivel inválido' }, { status: 400 })
+    }
 
   // 2. Guard: bracket must not already exist
   const { data: existing } = await supabaseAdmin
@@ -83,26 +84,46 @@ export async function POST(request) {
 
   // SF1: Grupo A 1st vs Grupo B 2nd
   // SF2: Grupo B 1st vs Grupo A 2nd
-  const { data: sf1 } = await supabaseAdmin
-    .from('matches')
-    .insert({ level: lvl, stage: 'semifinal', team1_id: ga[0].team_id, team2_id: gb[1].team_id })
-    .select('id').single()
+  const { data: sf1, error: sf1Err } = await supabaseAdmin
+  .from('matches')
+  .insert({ level: lvl, stage: 'semifinal', team1_id: ga[0].team_id, team2_id: gb[1].team_id })
+  .select('id').single()
 
-  const { data: sf2 } = await supabaseAdmin
-    .from('matches')
-    .insert({ level: lvl, stage: 'semifinal', team1_id: gb[0].team_id, team2_id: ga[1].team_id })
-    .select('id').single()
+if (sf1Err || !sf1) {
+  console.error('SF1 insert mislukt:', sf1Err)
+  return NextResponse.json({ error: `SF1 insert: ${sf1Err?.message}` }, { status: 500 })
+}
+
+const { data: sf2, error: sf2Err } = await supabaseAdmin
+  .from('matches')
+  .insert({ level: lvl, stage: 'semifinal', team1_id: gb[0].team_id, team2_id: ga[1].team_id })
+  .select('id').single()
+
+if (sf2Err || !sf2) {
+  console.error('SF2 insert mislukt:', sf2Err)
+  return NextResponse.json({ error: `SF2 insert: ${sf2Err?.message}` }, { status: 500 })
+}
 
   // Create 3 knockout_encounters: SF1, SF2, Final placeholder (no match yet for Final)
-  await supabaseAdmin.from('knockout_encounters').insert([
-    { level: lvl, round: 'semifinal', team1_id: ga[0].team_id, team2_id: gb[1].team_id, match_id: sf1.id },
-    { level: lvl, round: 'semifinal', team1_id: gb[0].team_id, team2_id: ga[1].team_id, match_id: sf2.id },
-    { level: lvl, round: 'final',     team1_id: null,            team2_id: null,            match_id: null  },
-  ])
+  const { error: koErr } = await supabaseAdmin.from('knockout_encounters').insert([
+  { level: lvl, round: 'semifinal', team1_id: ga[0].team_id, team2_id: gb[1].team_id, match_id: sf1.id },
+  { level: lvl, round: 'semifinal', team1_id: gb[0].team_id, team2_id: ga[1].team_id, match_id: sf2.id },
+  { level: lvl, round: 'final',     team1_id: null,           team2_id: null,           match_id: null  },
+])
+
+if (koErr) {
+  console.error('knockout_encounters insert mislukt:', koErr)
+  return NextResponse.json({ error: `KO insert: ${koErr.message}` }, { status: 500 })
+}
 
   return NextResponse.json({
     success: true,
     sf1: `${ga[0].name} vs ${gb[1].name}`,
     sf2: `${gb[0].name} vs ${ga[1].name}`,
   })
+}
+ catch (err) {
+    console.error('[bracket/seed] onverwachte fout:', err)
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
 }
