@@ -28,7 +28,7 @@ export default function AdminBracket({ initialEncounters }) {
     ))
   }
 
-  async function post(url, body) {
+ async function post(url, body) {
   setLoading(true); setFlash(null)
   try {
     const res  = await fetch(url, {
@@ -36,17 +36,14 @@ export default function AdminBracket({ initialEncounters }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-    const text = await res.text()          // lees als tekst eerst
+    const text = await res.text()
     let data = {}
-    try { data = JSON.parse(text) }        // probeer als JSON
-    catch {
-      // Server stuurde HTML-foutpagina of lege body — toon status
-      setLoading(false)
-      setFlash({ type: 'err', msg: `Server error ${res.status} — check de terminal` })
-      return { ok: false }
-    }
+    try { data = JSON.parse(text) } catch { /**/ }
     setLoading(false)
-    if (res.ok) { router.refresh(); return { ok: true, data } }
+    if (res.ok) {
+      window.location.reload()       // ← was: router.refresh()
+      return { ok: true, data }
+    }
     setFlash({ type: 'err', msg: data.error || 'Error desconocido' })
     return { ok: false }
   } catch (err) {
