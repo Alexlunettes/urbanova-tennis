@@ -25,6 +25,8 @@ export default function AdminLoginPage() {
       router.refresh()          // forces the server component to re-read the cookie
     } else {
       const data = await res.json()
+      console.log('ENV:', JSON.stringify(process.env.ADMIN_PASSWORD))
+      console.log('Got:', JSON.stringify(password))
       setError(data.error || 'Error al iniciar sesión')
       setLoading(false)
     }

@@ -11,7 +11,7 @@ const LEVEL_INFO = {
 export default async function EquiposPage() {
   const { data: teams, error } = await supabase
     .from('teams')
-    .select('id, name, level, players(id, name)')
+    .select('id, name, level, player1:player1_id(id, name), player2:player2_id(id, name)')
     .order('level')
     .order('name')
 
