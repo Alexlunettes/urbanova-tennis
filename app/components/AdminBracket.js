@@ -235,33 +235,67 @@ export default function AdminBracket({ initialEncounters }) {
 function KOMatchRow({ enc, isSelected, onSelect }) {
   const hasMatch    = !!enc.match?.id
   const isCompleted = !!enc.match?.completed
+  const matchSets = (enc.match?.sets || []).sort((a, b) => a.set_number - b.set_number)
+
+  async function handleReset() {
+    if (!enc.match?.id) return
+    if (!confirm('¿Resetear este partido? Se borrarán todos los sets.')) return
+
+    const res = await fetch(`/api/matches/${enc.match.id}/reset`, { method: 'POST' })
+    if (res.ok) {
+      window.location.reload()
+      return
+    }
+
+    const { error } = await res.json()
+    alert('Error: ' + (error || 'No se pudo resetear'))
+  }
 
   return (
-    <button
-      onClick={onSelect}
-      disabled={!hasMatch || isCompleted}
-      className={`w-full text-left rounded-xl border px-4 py-3 transition-colors ${
+    <div
+      className={`w-full rounded-xl border px-4 py-3 transition-colors ${
         isSelected
           ? 'border-sage bg-sage/5'
           : isCompleted
-          ? 'border-gray-100 bg-gray-50 opacity-60 cursor-default'
+          ? 'border-gray-100 bg-gray-50'
           : hasMatch
-          ? 'border-gray-200 bg-white hover:border-sage/50 hover:bg-sage/5 cursor-pointer'
-          : 'border-dashed border-gray-200 bg-gray-50 cursor-default'
+          ? 'border-gray-200 bg-white hover:border-sage/50 hover:bg-sage/5'
+          : 'border-dashed border-gray-200 bg-gray-50'
       }`}
     >
-      <div className="flex items-center justify-between">
-        <span className="font-lato text-sm text-gray-800">
-          {enc.team1?.name ?? '—'} <span className="text-gray-400 mx-1">vs</span> {enc.team2?.name ?? '—'}
-        </span>
-        <span className={`font-lato text-xs font-bold px-2.5 py-0.5 rounded-full ${
-          isCompleted ? 'bg-green-100 text-green-700'
-          : hasMatch  ? 'bg-amber-100 text-amber-700'
-          :              'bg-gray-100 text-gray-400'
-        }`}>
-          {isCompleted ? 'Completado' : hasMatch ? 'Pendiente' : 'Sin crear'}
-        </span>
+      <div className="flex items-center justify-between gap-3">
+        <button
+          onClick={onSelect}
+          disabled={!hasMatch || isCompleted}
+          className={`flex min-w-0 flex-1 items-center text-left ${
+            !hasMatch || isCompleted ? 'cursor-default' : 'cursor-pointer'
+          }`}
+        >
+          <span className="font-lato text-sm text-gray-800 truncate">
+            {enc.team1?.name ?? '—'} <span className="text-gray-400 mx-1">vs</span> {enc.team2?.name ?? '—'}
+          </span>
+        </button>
+
+        {isCompleted ? (
+          <>
+            <span className="font-lato text-xs text-gray-400 shrink-0 tabular-nums">
+              {matchSets.map(s => `${s.team1_score}–${s.team2_score}`).join(' ')}
+            </span>
+            <button
+              onClick={handleReset}
+              className="font-lato text-xs text-red-500 hover:text-red-700 underline shrink-0"
+            >
+              Resetear
+            </button>
+          </>
+        ) : (
+          <span className={`font-lato text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0 ${
+            hasMatch ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'
+          }`}>
+            {hasMatch ? 'Pendiente' : 'Sin crear'}
+          </span>
+        )}
       </div>
-    </button>
+    </div>
   )
 }

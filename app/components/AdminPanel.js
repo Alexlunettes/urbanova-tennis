@@ -281,6 +281,22 @@ export default function AdminPanel({ initialPending, initialCompleted }) {
                       }`}>
                         {match.team2?.name}
                       </p>
+                      <button
+                      onClick={async () => {
+                        if (!confirm('¿Resetear este partido? Se borrarán todos los sets.')) return
+                        const res = await fetch(`/api/matches/${match.id}/reset`, { method: 'POST' })
+                        if (res.ok) {
+                          setCompleted(prev => prev.filter(m => m.id !== match.id))
+                          setPending(prev => [match, ...prev])
+                        } else {
+                          const { error } = await res.json()
+                          alert('Error: ' + error)
+                        }
+                      }}
+                      className="font-lato text-xs text-red-500 hover:text-red-700 underline ml-3"
+                    >
+                      Resetear
+                    </button>
                     </div>
                   )
                 })}
