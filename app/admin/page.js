@@ -45,16 +45,16 @@ export default async function AdminPage() {
 
     supabase
       .from('knockout_encounters')
-      .select(`
-        id, level, round, team1_id, team2_id, winner_id,
-        team1:team1_id(id, name),
-        team2:team2_id(id, name),
-        winner:winner_id(id, name),
-        match:match_id(id, completed, winner_id,
-          sets(set_number, team1_score, team2_score))
-      `)
-      .order('level')
-      .order('created_at'),
+  .select(`
+    id, level, round, team1_id, team2_id, winner_id, match_id,
+    team1:team1_id(id, name),
+    team2:team2_id(id, name),
+    winner:winner_id(id, name),
+    match:match_id(id, completed, winner_id,
+      sets(set_number, team1_score, team2_score))
+  `)
+  .order('level')
+  .order('created_at'),
   ])
 
   return (
