@@ -5,12 +5,15 @@ import { usePathname } from 'next/navigation'
 import { useState }   from 'react'
 
 const links = [
-  { href: '/',         label: 'Inicio'   },
-  { href: '/equipos',  label: 'Equipos'  },
-  { href: '/grupos',   label: 'Grupos'   },
-  { href: '/partidos', label: 'Partidos' },
-  { href: '/cuadro',   label: 'Cuadro'   },   // ← add this
-  { href: '/reglas',   label: 'Reglas'   },
+  { href: '/',              label: 'Inicio'       },
+  { href: '/equipos',       label: 'Equipos'      },
+  { href: '/grupos',        label: 'Grupos'       },
+  { href: '/partidos',      label: 'Partidos'     },
+  { href: '/cuadro',        label: 'Cuadro'       },
+  { href: '/galeria',       label: 'Galería'      },  // ← new
+  { href: '/estadisticas',  label: 'Stats'        },  // ← new (short label for nav)
+  { href: '/mvp',           label: 'MVP'          },  // ← new
+  { href: '/reglas',        label: 'Reglas'       },
 ]
 
 export default function Navbar() {
