@@ -1,7 +1,7 @@
 'use client'
 
-import { useState }    from 'react'
-import { useRouter }   from 'next/navigation'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
@@ -14,61 +14,72 @@ export default function AdminLoginPage() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/admin-login', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ password }),
-    })
+    try {
+      const res = await fetch('/api/admin-login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password }),
+      })
 
-    if (res.ok) {
-      router.push('/admin')
-      router.refresh()          // forces the server component to re-read the cookie
-    } else {
-      const data = await res.json()
-    
+      if (res.ok) {
+        router.push('/admin')
+        router.refresh()          // re-runs the server component so it sees the cookie
+        return
+      }
+
+      const data = await res.json().catch(() => ({}))
       setError(data.error || 'Error al iniciar sesión')
-      setLoading(false)
+    } catch {
+      setError('Error de red. Inténtalo de nuevo.')
     }
+    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-sage/10 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <span className="text-4xl">🔐</span>
-          <h1 className="font-bebas text-3xl text-gray-900 tracking-wide mt-3">
-            PANEL DE ADMIN
-          </h1>
-          <p className="font-lato text-sm text-gray-500 mt-1">
-            Solo para la organización del torneo.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Contraseña"
-            autoComplete="current-password"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 font-lato text-sm focus:outline-none focus:ring-2 focus:ring-sage/40 focus:border-sage"
-          />
-
-          {error && (
-            <p className="font-lato text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-              {error}
+    <main className="flex min-h-[80vh] items-center justify-center px-5">
+      <div className="w-full max-w-sm">
+        <div className="rounded-2xl border border-hairline bg-surface p-7 shadow-lg">
+          <div className="mb-7 text-center">
+            <span className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <rect x="4" y="10.5" width="16" height="10.5" rx="2.5" />
+                <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+              </svg>
+            </span>
+            <h1 className="font-display text-3xl text-fg">PANEL DE ADMIN</h1>
+            <p className="mt-1 text-[13px] text-fg-muted">
+              Acceso restringido a la organización.
             </p>
-          )}
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading || !password}
-            className="w-full bg-sage text-white font-lato font-bold text-sm py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
-          >
-            {loading ? 'Comprobando...' : 'Entrar'}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Contraseña"
+              autoComplete="current-password"
+              autoFocus
+              aria-label="Contraseña de administración"
+              className="h-11 w-full rounded-xl border border-hairline bg-surface px-3.5 text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none"
+            />
+
+            {error && (
+              <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-[13px] text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || !password}
+              className="h-11 w-full rounded-xl bg-accent text-sm font-medium text-accent-fg transition-all hover:brightness-110 disabled:opacity-40"
+            >
+              {loading ? 'Comprobando…' : 'Entrar'}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }

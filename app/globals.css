@@ -1,20 +1,252 @@
 @import "tailwindcss";
 
-@theme {
-  --color-sage:         #8CAD87;
-  --color-sage-dark:    #2D5230;
-  --color-sage-light:   #B8CEB5;
-  --color-gold:         #C4933F;
-  --color-gold-light:   #E5C97A;
-  --color-cream:        #F2EDE4;
-  --color-cream-dark:   #E4DDD4;
-  --color-court:        #5B8FA8;
-  --color-forest:       #1F2A1E;
+@custom-variant dark (&:where(.dark, .dark *));
 
-  --font-family-bebas:  var(--font-bebas), sans-serif;
-  --font-family-lato:   var(--font-lato),  sans-serif;
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   Palette drawn from the tournament emblem — evergreen court, sand, sea blue —
+   but rebuilt as full scales so contrast can be tuned properly rather than
+   leaning on opacity. These are raw scales; the semantic tokens further down
+   are what components should actually reference.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Brand: evergreen ─────────────────────────────────────────────────── */
+  --color-brand-50:  #eefaf3;
+  --color-brand-100: #d5f2e2;
+  --color-brand-200: #ade4c9;
+  --color-brand-300: #77cfa8;
+  --color-brand-400: #43b285;
+  --color-brand-500: #1f966a;
+  --color-brand-600: #117855;
+  --color-brand-700: #0d5f45;
+  --color-brand-800: #0d4b38;
+  --color-brand-900: #0c3e30;
+  --color-brand-950: #04231b;
+
+  /* ── Accent: sand / champagne — trophies, winners, highlights ─────────── */
+  --color-sand-50:  #fdf8ed;
+  --color-sand-100: #f9edd0;
+  --color-sand-200: #f2d99e;
+  --color-sand-300: #e9be65;
+  --color-sand-400: #e2a53d;
+  --color-sand-500: #d98c26;
+  --color-sand-600: #c06d1c;
+  --color-sand-700: #9f5019;
+  --color-sand-800: #82401b;
+  --color-sand-900: #6b3619;
+  --color-sand-950: #3d1b09;
+
+  /* ── Secondary: sea — courts, schedules, live states ──────────────────── */
+  --color-court-50:  #eff9fb;
+  --color-court-100: #d7eff4;
+  --color-court-200: #b3dfea;
+  --color-court-300: #7fc7db;
+  --color-court-400: #44a5c4;
+  --color-court-500: #2988a9;
+  --color-court-600: #246e8e;
+  --color-court-700: #245a74;
+  --color-court-800: #264b60;
+  --color-court-900: #234052;
+  --color-court-950: #122936;
+
+  /* ── Neutrals: very slightly warm, so the page never looks clinical ───── */
+  --color-ink-50:  #f7f7f5;
+  --color-ink-100: #eeeeea;
+  --color-ink-200: #dcdcd5;
+  --color-ink-300: #b9b9af;
+  --color-ink-400: #91918a;
+  --color-ink-500: #74746d;
+  --color-ink-600: #5c5c57;
+  --color-ink-700: #4a4a46;
+  --color-ink-800: #3d3d3a;
+  --color-ink-900: #2a2a28;
+  --color-ink-950: #15151a;
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  --font-display: var(--font-bebas), "Haettenschweiler", "Impact", sans-serif;
+  --font-sans:    var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* ── Elevation. Layered low-alpha shadows read as depth rather than as a
+         grey smudge — the Stripe/Linear approach. ───────────────────────── */
+  --shadow-xs:   0 1px 2px 0 rgb(12 15 14 / 0.04);
+  --shadow-sm:   0 1px 2px 0 rgb(12 15 14 / 0.05), 0 1px 3px 0 rgb(12 15 14 / 0.05);
+  --shadow-md:   0 2px 4px -1px rgb(12 15 14 / 0.05), 0 4px 12px -2px rgb(12 15 14 / 0.08);
+  --shadow-lg:   0 4px 8px -2px rgb(12 15 14 / 0.06), 0 12px 28px -6px rgb(12 15 14 / 0.12);
+  --shadow-xl:   0 8px 16px -4px rgb(12 15 14 / 0.08), 0 24px 48px -12px rgb(12 15 14 / 0.18);
+  --shadow-glow: 0 0 0 1px rgb(31 150 106 / 0.16), 0 8px 32px -8px rgb(31 150 106 / 0.28);
+
+  /* ── Motion. One easing curve throughout keeps the app feeling coherent. */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:    cubic-bezier(0.34, 1.36, 0.64, 1);
+
+  --animate-fade-up:  fade-up 0.6s var(--ease-out-quint) both;
+  --animate-fade-in:  fade-in 0.5s var(--ease-out-quint) both;
+  --animate-scale-in: scale-in 0.35s var(--ease-spring) both;
+  --animate-shimmer:  shimmer 2.2s linear infinite;
 }
 
+@keyframes fade-up  { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+@keyframes fade-in  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes scale-in { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: none } }
+@keyframes shimmer  { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgb(41 136 169 / 0.5) }
+  70%  { box-shadow: 0 0 0 7px rgb(41 136 169 / 0) }
+  100% { box-shadow: 0 0 0 0 rgb(41 136 169 / 0) }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEMANTIC TOKENS
+   Components reference these, never the raw scales, so dark mode is a single
+   block of overrides instead of a `dark:` variant on every element.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  --color-canvas:          var(--canvas);
+  --color-surface:         var(--surface);
+  --color-surface-2:       var(--surface-2);
+  --color-hairline:        var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-fg:              var(--fg);
+  --color-fg-muted:        var(--fg-muted);
+  --color-fg-subtle:       var(--fg-subtle);
+  --color-accent:          var(--accent);
+  --color-accent-fg:       var(--accent-fg);
+  --color-accent-soft:     var(--accent-soft);
+}
+
+:root {
+  --canvas:          #fbfbf9;
+  --surface:         #ffffff;
+  --surface-2:       #f7f7f5;
+  --hairline:        rgb(12 15 14 / 0.08);
+  --hairline-strong: rgb(12 15 14 / 0.14);
+  --fg:              #15151a;
+  --fg-muted:        #5c5c57;
+  --fg-subtle:       #91918a;
+  --accent:          #117855;
+  --accent-fg:       #ffffff;
+  --accent-soft:     #eefaf3;
+
+  color-scheme: light;
+}
+
+.dark {
+  --canvas:          #0a0d0c;
+  --surface:         #121614;
+  --surface-2:       #181d1b;
+  --hairline:        rgb(255 255 255 / 0.09);
+  --hairline-strong: rgb(255 255 255 / 0.16);
+  --fg:              #f2f4f3;
+  --fg-muted:        #a3aba7;
+  --fg-subtle:       #717976;
+  --accent:          #43b285;
+  --accent-fg:       #04231b;
+  --accent-soft:     rgb(67 178 133 / 0.12);
+
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @layer base {
-  html { scroll-behavior: smooth; }
+  * {
+    border-color: var(--hairline);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--fg);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Bebas needs extra tracking or the caps close up at large sizes. */
+  .font-display {
+    letter-spacing: 0.02em;
+    line-height: 0.92;
+  }
+
+  /* One visible, consistent focus ring. Never removed. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  /* Scores and standings have to line up in columns. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PATTERNS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Faint court-line grid, used behind the hero. */
+  .bg-court-grid {
+    background-image:
+      linear-gradient(to right,  var(--hairline) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--hairline) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  /* Used sparingly — the hero wordmark only. */
+  .text-gradient {
+    background-image: linear-gradient(120deg, var(--fg) 20%, var(--color-brand-500) 65%, var(--color-sand-400) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  .shimmer {
+    background-image: linear-gradient(90deg, transparent 20%, var(--hairline) 50%, transparent 80%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2s var(--ease-out-quint) infinite;
+  }
+
+  /* Horizontally scrolling regions get a soft edge mask, so the cut-off reads
+     as "there is more" rather than as a broken layout. */
+  .scroll-fade-x {
+    mask-image: linear-gradient(to right, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none }
+  .no-scrollbar { scrollbar-width: none }
 }

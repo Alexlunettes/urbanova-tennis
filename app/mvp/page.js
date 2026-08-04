@@ -1,15 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { LEVELS } from '@/lib/tournament'
 import MvpVoter from '@/app/components/MvpVoter'
+import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
+import EmptyState from '@/app/components/ui/EmptyState'
+import Button from '@/app/components/ui/Button'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+export const revalidate = 0 // Voting is live.
 
-export const revalidate = 0 // always fresh (voting is real-time)
+export const metadata = { title: 'MVP del torneo' }
 
 export default async function MvpPage() {
-  // Fetch teams with their players (fastest way to get player → level mapping)
+  // Teams carry the category, so this is the cheapest way to build a player
+  // list already tagged by category.
   const { data: teams } = await supabase
     .from('teams')
     .select(`
@@ -19,10 +21,9 @@ export default async function MvpPage() {
     `)
     .order('level')
 
-  // Build a flat, deduplicated player list
   const seen = new Set()
   const players = []
-  for (const team of (teams ?? [])) {
+  for (const team of teams ?? []) {
     for (const p of [team.player1, team.player2]) {
       if (p && !seen.has(p.id)) {
         seen.add(p.id)
@@ -30,23 +31,36 @@ export default async function MvpPage() {
       }
     }
   }
-  players.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+  players.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, 'es'))
+
+  const hasPlayers = players.length > 0
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <h1 className="font-bebas text-5xl text-sage tracking-widest mb-2">MVP DEL TORNEO</h1>
-      <p className="font-lato text-gray-500 mb-8">
-        ¿Quién ha sido el mejor jugador de esta edición? Vota y descubre los resultados en tiempo real.
-      </p>
+    <PageShell>
+      <PageHeader
+        eyebrow="Votación abierta"
+        title="MVP DEL TORNEO"
+        description="¿Quién ha sido el jugador o la jugadora de esta edición? Un voto por persona, resultados en directo."
+      />
 
-      {players.length === 0 ? (
-        <div className="text-center py-16 border border-sage/20 rounded-xl text-gray-400">
-          <p className="font-bebas text-2xl tracking-wide mb-2">JUGADORES NO AÑADIDOS AÚN</p>
-          <p className="font-lato text-sm">Los jugadores aparecerán aquí una vez se añadan al torneo.</p>
-        </div>
+      {!hasPlayers ? (
+        <EmptyState
+          icon={<StarIcon />}
+          title="Votación no disponible"
+          description="Los jugadores aparecerán aquí en cuanto se publique el cuadro de inscritos."
+          action={<Button href="/equipos" variant="secondary">Ver parejas</Button>}
+        />
       ) : (
-        <MvpVoter players={players} />
+        <MvpVoter players={players} categories={LEVELS} />
       )}
-    </div>
+    </PageShell>
+  )
+}
+
+function StarIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+      <path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9Z" />
+    </svg>
   )
 }

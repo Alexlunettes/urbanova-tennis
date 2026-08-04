@@ -1,153 +1,192 @@
 import { supabase } from '@/lib/supabase'
-import Link         from 'next/link'
+import { CATEGORY_META } from '@/lib/tournament'
 import RealtimeRefresher from '@/app/components/RealtimeRefresher'
+import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
+import CategoryTabs, { parseCategory } from '@/app/components/ui/CategoryTabs'
+import EmptyState from '@/app/components/ui/EmptyState'
+import Badge from '@/app/components/ui/Badge'
+import { cn } from '@/lib/cn'
 
 export const revalidate = 0
 
-function formatDay(isoStr) {
-  if (!isoStr) return 'Sin fecha asignada'
-  const d = new Date(isoStr)
-  return d.toLocaleDateString('es-ES', {
-    weekday: 'long', day: 'numeric', month: 'long',
+export const metadata = { title: 'Partidos' }
+
+const TZ = 'Europe/Madrid'
+
+function dayLabel(iso) {
+  if (!iso) return 'Sin horario asignado'
+  return new Date(iso).toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ,
+  })
+}
+
+function timeLabel(iso) {
+  if (!iso) return null
+  return new Date(iso).toLocaleTimeString('es-ES', {
+    hour: '2-digit', minute: '2-digit', timeZone: TZ,
   })
 }
 
 export default async function PartidosPage({ searchParams }) {
   const params = await searchParams
-  const nivel  = parseInt(params.nivel) || 1
+  const cat    = parseCategory(params)
 
   const { data: matches } = await supabase
     .from('matches')
     .select(`
-      id, completed, scheduled_at, court,
+      id, completed, scheduled_at, court, winner_id,
       team1:team1_id(id, name),
       team2:team2_id(id, name),
-      winner:winner_id(id, name),
-      tournament_groups(id, name),
       sets(set_number, team1_score, team2_score, is_super_tiebreak)
     `)
     .eq('stage', 'group_stage')
-    .eq('level', nivel)
+    .eq('level', cat)
     .order('scheduled_at', { ascending: true, nullsFirst: false })
 
-  // Group by calendar day
-  const byDay = {}
-  for (const match of (matches || [])) {
-    const key   = match.scheduled_at
-      ? new Date(match.scheduled_at).toDateString()
-      : 'SIN_FECHA'
-    const label = formatDay(match.scheduled_at)
-    if (!byDay[key]) byDay[key] = { label, matches: [] }
-    byDay[key].matches.push(match)
+  // Group by calendar day. Matches without a slot fall into their own bucket
+  // at the end, rather than being hidden.
+  const days = []
+  const index = new Map()
+  for (const match of matches ?? []) {
+    const key = match.scheduled_at
+      ? new Date(match.scheduled_at).toLocaleDateString('es-ES', { timeZone: TZ })
+      : 'SIN_HORARIO'
+    if (!index.has(key)) {
+      index.set(key, { key, label: dayLabel(match.scheduled_at), matches: [] })
+      days.push(index.get(key))
+    }
+    index.get(key).matches.push(match)
   }
 
-  return (
-    <main className="max-w-4xl mx-auto px-4 py-10 min-h-screen">
-      <h1 className="font-bebas text-5xl text-gray-900 tracking-wide mb-1">PARTIDOS</h1>
-      <p className="font-lato text-gray-500 text-sm mb-8">
-        Fase de grupos · programa y resultados
-      </p>
+  const played = (matches ?? []).filter(m => m.completed).length
 
-      {/* Level tabs */}
-      <div className="flex gap-2 mb-10">
-        {[1, 2, 3].map(n => (
-          <Link
-            key={n}
-            href={`/partidos?nivel=${n}`}
-            className={`px-5 py-2 rounded-full font-lato font-bold text-sm transition-colors ${
-              nivel === n ? 'bg-sage text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-            }`}
-          >
-            Nivel {n}
-          </Link>
-        ))}
+  return (
+    <PageShell>
+      <RealtimeRefresher tables={['matches', 'sets']} />
+
+      <PageHeader
+        eyebrow="Fase de grupos"
+        title="PARTIDOS"
+        description="Calendario y resultados de la fase de grupos. Los resultados se actualizan en directo según se van introduciendo."
+      />
+
+      <CategoryTabs basePath="/partidos" active={cat} />
+
+      <div className="mt-8 flex flex-wrap items-end gap-x-6 gap-y-3">
+        <p className="font-display text-3xl text-fg">{CATEGORY_META[cat].name}</p>
+        {(matches ?? []).length > 0 && (
+          <Badge tone={played === matches.length ? 'accent' : 'neutral'} size="md" className="ml-auto">
+            {played} / {matches.length} jugados
+          </Badge>
+        )}
       </div>
 
-      {Object.keys(byDay).length === 0 ? (
-        <div className="bg-sage/10 rounded-2xl border border-sage/20 p-12 text-center">
-          <p className="font-lato text-gray-500">
-            Los partidos del Nivel {nivel} todavía no están disponibles.
-          </p>
-        </div>
+      {days.length === 0 ? (
+        <EmptyState
+          className="mt-8"
+          icon={<CalendarIcon />}
+          title="Calendario no disponible"
+          description={`Los partidos de ${CATEGORY_META[cat].name} se publicarán aquí en cuanto se cierre el sorteo.`}
+        />
       ) : (
-        <div className="space-y-10">
-          {Object.entries(byDay).map(([key, { label, matches: dayMatches }]) => (
-            <div key={key}>
-              <h2 className="font-bebas text-2xl tracking-wide mb-4 capitalize text-gold">
-                {label}
-              </h2>
-              <div className="space-y-3">
-                {dayMatches.map(m => <MatchCard key={m.id} match={m} />)}
+        <div className="mt-8 space-y-10">
+          {days.map(day => (
+            <section key={day.key}>
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="font-display text-2xl capitalize text-fg">{day.label}</h2>
+                <span className="h-px flex-1 bg-hairline" />
+                <span className="tabular text-xs text-fg-subtle">
+                  {day.matches.length} {day.matches.length === 1 ? 'partido' : 'partidos'}
+                </span>
               </div>
-            </div>
+              <div className="space-y-2">
+                {day.matches.map(m => <MatchRow key={m.id} match={m} />)}
+              </div>
+            </section>
           ))}
         </div>
       )}
-      <RealtimeRefresher tables={['sets', 'matches']} />
-    </main>
+    </PageShell>
   )
 }
 
-function MatchCard({ match }) {
-  const sets   = (match.sets || []).sort((a, b) => a.set_number - b.set_number)
-  const t1Wins = match.winner?.id === match.team1?.id
-  const t2Wins = match.winner?.id === match.team2?.id
+function MatchRow({ match }) {
+  const sets   = (match.sets ?? []).slice().sort((a, b) => a.set_number - b.set_number)
+  const t1Won  = match.completed && match.winner_id === match.team1?.id
+  const t2Won  = match.completed && match.winner_id === match.team2?.id
+  const time   = timeLabel(match.scheduled_at)
 
   return (
-    <div className={`rounded-2xl border p-4 ${
-      match.completed ? 'bg-white border-gray-200' : 'bg-sage/5 border-sage/20'
-    }`}>
-      <div className="flex items-center gap-3">
-        {/* Team 1 */}
-        <div className="flex-1 min-w-0">
-          <p className={`font-lato font-bold text-sm truncate ${
-            t1Wins ? 'text-gray-900'
-            : match.completed ? 'text-gray-400' : 'text-gray-700'
-          }`}>
-            {match.team1?.name ?? '—'}
-          </p>
-        </div>
+    <article
+      className={cn(
+        'group grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl border px-4 py-3.5',
+        'transition-all duration-200 sm:gap-5 sm:px-5',
+        match.completed
+          ? 'border-hairline bg-surface hover:border-hairline-strong'
+          : 'border-court-200/70 bg-court-50/40 dark:border-court-400/20 dark:bg-court-400/5',
+      )}
+    >
+      <TeamName name={match.team1?.name} won={t1Won} dimmed={match.completed && !t1Won} />
 
-        {/* Centre: score or time */}
-        <div className="shrink-0">
-          {match.completed ? (
-            <div className="flex gap-1">
-              {sets.map(s => (
-                <span key={s.set_number}
-                  className="font-lato text-xs bg-gray-100 rounded px-1.5 py-0.5 tabular-nums"
-                >
-                  {s.team1_score}–{s.team2_score}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span className="font-lato text-xs font-bold text-sage bg-sage/10 rounded-full px-3 py-1">
-              {match.scheduled_at
-                ? new Date(match.scheduled_at).toLocaleTimeString('es-ES', {
-                    hour: '2-digit', minute: '2-digit',
-                  })
-                : 'Pendiente'}
-            </span>
-          )}
-        </div>
-
-        {/* Team 2 */}
-        <div className="flex-1 min-w-0 text-right">
-          <p className={`font-lato font-bold text-sm truncate ${
-            t2Wins ? 'text-gray-900'
-            : match.completed ? 'text-gray-400' : 'text-gray-700'
-          }`}>
-            {match.team2?.name ?? '—'}
-          </p>
-        </div>
+      <div className="flex flex-col items-center gap-1">
+        {match.completed ? (
+          <div className="flex gap-1">
+            {sets.map(s => (
+              <span
+                key={s.set_number}
+                className={cn(
+                  'tabular rounded-md border px-1.5 py-1 font-mono text-[11px] leading-none',
+                  s.is_super_tiebreak
+                    ? 'border-sand-300/60 bg-sand-50 text-sand-800 dark:bg-sand-400/10 dark:text-sand-300'
+                    : 'border-hairline bg-surface-2 text-fg-muted',
+                )}
+                title={s.is_super_tiebreak ? 'Super tiebreak' : `Set ${s.set_number}`}
+              >
+                {s.team1_score}–{s.team2_score}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="tabular rounded-full border border-court-300/50 bg-surface px-3 py-1 font-mono text-[11px] text-court-700 dark:border-court-400/25 dark:text-court-300">
+            {time ?? 'Por fijar'}
+          </span>
+        )}
+        {match.court && (
+          <span className="text-[10px] text-fg-subtle">Pista {match.court}</span>
+        )}
       </div>
 
-      {(match.tournament_groups?.name || match.court) && (
-        <p className="font-lato text-xs text-gray-400 mt-2 text-center">
-          {[match.tournament_groups?.name, match.court ? `Pista ${match.court}` : null]
-            .filter(Boolean).join(' · ')}
-        </p>
+      <TeamName name={match.team2?.name} won={t2Won} dimmed={match.completed && !t2Won} align="right" />
+    </article>
+  )
+}
+
+function TeamName({ name, won, dimmed, align = 'left' }) {
+  return (
+    <div className={cn('flex min-w-0 items-center gap-1.5', align === 'right' && 'flex-row-reverse')}>
+      {won && (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" className="shrink-0 text-accent" aria-label="Ganador">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
       )}
+      <p
+        className={cn(
+          'truncate text-[13.5px]',
+          align === 'right' && 'text-right',
+          won ? 'font-medium text-fg' : dimmed ? 'text-fg-subtle' : 'text-fg-muted',
+        )}
+      >
+        {name ?? '—'}
+      </p>
     </div>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
   )
 }

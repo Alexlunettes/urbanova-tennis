@@ -1,87 +1,159 @@
 import { getPlayerStats } from '@/lib/player-stats'
+import { LEVELS, CATEGORY_META } from '@/lib/tournament'
+import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
+import EmptyState from '@/app/components/ui/EmptyState'
+import Badge from '@/app/components/ui/Badge'
+import Button from '@/app/components/ui/Button'
+import { cn } from '@/lib/cn'
 
-export const revalidate = 60 // ISR: re-fetch at most every 60 seconds
+export const revalidate = 30
 
-const LEVEL_LABELS = {
-  1: 'NIVEL 1 — Semiprofesional',
-  2: 'NIVEL 2 — Amateur Avanzado',
-  3: 'NIVEL 3 — Amateur',
+export const metadata = { title: 'Estadísticas' }
+
+export default async function EstadisticasPage() {
+  const statsByCategory = await getPlayerStats()
+  const hasData = LEVELS.some(l => statsByCategory[l].length > 0)
+
+  return (
+    <PageShell>
+      <PageHeader
+        eyebrow="Rendimiento individual"
+        title="ESTADÍSTICAS"
+        description="Números acumulados de cada jugador a lo largo del torneo, ordenados por victorias y diferencia de juegos."
+      />
+
+      {!hasData ? (
+        <EmptyState
+          icon={<ChartIcon />}
+          title="Todavía sin resultados"
+          description="Las estadísticas se calculan automáticamente en cuanto se registra el primer partido."
+          action={<Button href="/partidos" variant="secondary">Ver calendario</Button>}
+        />
+      ) : (
+        <div className="space-y-14">
+          {LEVELS.map(level => {
+            const players = statsByCategory[level]
+            if (players.length === 0) return null
+            return (
+              <section key={level}>
+                <div className="mb-5 flex flex-wrap items-center gap-3 border-b border-hairline pb-4">
+                  <span className="font-display text-4xl text-accent/30">
+                    {CATEGORY_META[level].short}
+                  </span>
+                  <h2 className="mr-auto font-display text-2xl text-fg">
+                    {CATEGORY_META[level].name}
+                  </h2>
+                  <Badge tone="neutral" size="md">{players.length} jugadores</Badge>
+                </div>
+                <StatsTable players={players} />
+              </section>
+            )
+          })}
+        </div>
+      )}
+    </PageShell>
+  )
 }
 
 function StatsTable({ players }) {
-  if (players.length === 0) {
-    return (
-      <p className="text-gray-400 font-lato italic text-sm py-4">
-        Las estadísticas aparecen cuando se registran los primeros resultados.
-      </p>
-    )
-  }
-
   return (
-    // overflow-x-auto + min-w makes this table scroll horizontally on small phones
-    <div className="overflow-x-auto rounded-xl border border-sage/20">
-      <table className="w-full text-sm font-lato min-w-[520px]">
-        <thead className="bg-sage text-white">
-          <tr>
-            <th className="text-left px-4 py-3 font-medium">Jugador</th>
-            <th className="px-3 py-3 text-center font-medium" title="Partidos Jugados">PJ</th>
-            <th className="px-3 py-3 text-center font-medium" title="Partidos Ganados">PG</th>
-            <th className="px-3 py-3 text-center font-medium" title="Partidos Perdidos">PP</th>
-            <th className="px-3 py-3 text-center font-medium">Sets G/P</th>
-            <th className="px-3 py-3 text-center font-medium">Games G/P</th>
-          </tr>
-        </thead>
-        <tbody>
-          {players.map((p, i) => (
-            <tr
-              key={p.id}
-              className={`${i % 2 === 0 ? 'bg-white' : 'bg-sage/5'} hover:bg-gold/5 transition-colors`}
-            >
-              <td className="px-4 py-3 font-medium text-gray-800">
-                {i === 0 && <span className="mr-1">🏆</span>}
-                {p.name}
-              </td>
-              <td className="px-3 py-3 text-center text-gray-600">{p.matchesPlayed}</td>
-              <td className="px-3 py-3 text-center font-bold text-sage">{p.matchesWon}</td>
-              <td className="px-3 py-3 text-center text-gray-500">{p.matchesPlayed - p.matchesWon}</td>
-              <td className="px-3 py-3 text-center text-gray-600">{p.setsWon}/{p.setsLost}</td>
-              <td className="px-3 py-3 text-center text-gray-600">{p.gamesWon}/{p.gamesLost}</td>
+    <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-xs">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-155 text-sm">
+          <thead>
+            <tr className="border-b border-hairline bg-surface-2/60">
+              <Th className="w-12 pl-5 text-left">#</Th>
+              <Th className="text-left">Jugador</Th>
+              <Th className="w-12" title="Partidos jugados">PJ</Th>
+              <Th className="w-12" title="Partidos ganados">PG</Th>
+              <Th className="w-12" title="Partidos perdidos">PP</Th>
+              <Th className="w-16" title="Porcentaje de victorias">%</Th>
+              <Th className="w-20">Sets</Th>
+              <Th className="w-20 pr-5">Juegos</Th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {players.map((p, i) => (
+              <tr
+                key={p.id}
+                className="border-b border-hairline last:border-0 transition-colors hover:bg-surface-2/70"
+              >
+                <td className="py-3.5 pl-5">
+                  <span className="tabular font-mono text-[13px] text-fg-subtle">{i + 1}</span>
+                </td>
+                <td className="py-3.5 pr-4">
+                  <span className="flex items-center gap-2">
+                    {i === 0 && (
+                      <span className="text-[13px]" title="Líder de la categoría" aria-label="Líder">🏆</span>
+                    )}
+                    <span className={cn('truncate text-[13.5px]', i === 0 ? 'font-medium text-fg' : 'text-fg-muted')}>
+                      {p.name}
+                    </span>
+                  </span>
+                </td>
+                <Td muted>{p.matchesPlayed}</Td>
+                <Td strong>{p.matchesWon}</Td>
+                <Td muted>{p.matchesPlayed - p.matchesWon}</Td>
+                <td className="px-2 py-3.5 text-center">
+                  <span
+                    className={cn(
+                      'tabular font-mono text-[13px]',
+                      p.winRate >= 0.5 ? 'text-brand-600 dark:text-brand-400' : 'text-fg-subtle',
+                    )}
+                  >
+                    {Math.round(p.winRate * 100)}%
+                  </span>
+                </td>
+                <Td muted>{p.setsWon}–{p.setsLost}</Td>
+                <td className="px-2 py-3.5 pr-5 text-center">
+                  <span className="tabular font-mono text-[13px] text-fg-muted">
+                    {p.gamesWon}–{p.gamesLost}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
 
-export default async function Estadisticas() {
-  const statsByLevel = await getPlayerStats()
-  const hasData = [1, 2, 3].some(l => statsByLevel[l].length > 0)
-
+function Th({ children, className, ...props }) {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <h1 className="font-bebas text-5xl text-sage tracking-widest mb-2">ESTADÍSTICAS</h1>
-      <p className="font-lato text-gray-500 mb-10">
-        Rendimiento individual durante el torneo. PJ = partidos jugados, PG = ganados, PP = perdidos.
-      </p>
-
-      {!hasData ? (
-        <div className="text-center py-16 border border-sage/20 rounded-xl">
-          <p className="font-bebas text-2xl text-sage tracking-wide mb-2">TORNEO AÚN NO COMENZADO</p>
-          <p className="font-lato text-sm text-gray-400">
-            Las estadísticas aparecen automáticamente al registrar los primeros partidos.
-          </p>
-        </div>
-      ) : (
-        [1, 2, 3].map(level => (
-          <div key={level} className="mb-12">
-            <h2 className="font-bebas text-3xl text-gold tracking-widest mb-4">
-              {LEVEL_LABELS[level]}
-            </h2>
-            <StatsTable players={statsByLevel[level]} />
-          </div>
-        ))
+    <th
+      className={cn(
+        'px-2 py-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle',
+        className,
       )}
-    </div>
+      {...props}
+    >
+      {children}
+    </th>
+  )
+}
+
+function Td({ children, strong = false, muted = false }) {
+  return (
+    <td className="px-2 py-3.5 text-center">
+      <span
+        className={cn(
+          'tabular font-mono text-[13px]',
+          strong && 'font-medium text-fg',
+          muted && 'text-fg-muted',
+        )}
+      >
+        {children}
+      </span>
+    </td>
+  )
+}
+
+function ChartIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21" />
+      <path d="M7 15l3.5-4 3 2.5L18 8" />
+    </svg>
   )
 }

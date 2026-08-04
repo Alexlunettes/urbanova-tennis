@@ -1,146 +1,184 @@
-import { supabase }      from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+import { buildBracket } from '@/lib/squads'
+import { ROUNDS } from '@/lib/tournament'
 import RealtimeRefresher from '@/app/components/RealtimeRefresher'
+import SquadEncounterCard from '@/app/components/SquadEncounterCard'
+import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
+import EmptyState from '@/app/components/ui/EmptyState'
+import Badge from '@/app/components/ui/Badge'
+import Button from '@/app/components/ui/Button'
 
 export const revalidate = 0
 
-async function getBracket() {
-  const { data } = await supabase
-    .from('knockout_encounters')
-  .select(`
-    id, level, round, team1_id, team2_id, winner_id, match_id,
-    team1:team1_id(id, name),
-    team2:team2_id(id, name),
-    winner:winner_id(id, name),
-    match:match_id(id, completed, winner_id,
-      sets(set_number, team1_score, team2_score))
-  `)
-  .order('level')
-  .order('created_at')
-  return data || []
-}
+export const metadata = { title: 'Cuadro final' }
 
-const LEVEL_LABELS = { 1: 'Nivel 1', 2: 'Nivel 2', 3: 'Nivel 3' }
+const ROUND_ORDER = ['quarterfinal', 'semifinal', 'final']
+
+/**
+ * Attaches each squad's registered pairs, indexed by category, so a tie can
+ * still show who is in a squad before its matches have been created.
+ */
+function indexSquads(squads = []) {
+  const map = {}
+  for (const squad of squads) {
+    const membersByCategory = {}
+    for (const m of squad.squad_members ?? []) {
+      if (m.teams) membersByCategory[m.category] = m.teams
+    }
+    map[squad.id] = { ...squad, membersByCategory }
+  }
+  return map
+}
 
 export default async function CuadroPage() {
-  const encounters = await getBracket()
+  const [{ data: encounters }, { data: squads }, { data: matches }] = await Promise.all([
+    supabase
+      .from('squad_encounters')
+      .select('id, round, position, squad1_id, squad2_id, is_reduced, scheduled_at, court')
+      .order('position'),
+
+    supabase
+      .from('squads')
+      .select('id, name, seed, squad_members(category, teams(id, name))'),
+
+    supabase
+      .from('matches')
+      .select(`
+        id, level, stage, squad_encounter_id, completed, winner_id, team1_id, team2_id,
+        team1:team1_id(id, name),
+        team2:team2_id(id, name),
+        sets(set_number, team1_score, team2_score, is_super_tiebreak)
+      `)
+      .not('squad_encounter_id', 'is', null),
+  ])
+
+  const squadIndex = indexSquads(squads ?? [])
+
+  // Expand the squad relations before resolving, so each tie carries its rosters.
+  const enriched = (encounters ?? []).map(e => ({
+    ...e,
+    squad1: squadIndex[e.squad1_id] ?? null,
+    squad2: squadIndex[e.squad2_id] ?? null,
+  }))
+
+  const bracket = buildBracket(enriched, matches ?? [])
+  const hasBracket = bracket.length > 0
 
   return (
-    <main className="min-h-screen bg-gray-50 py-16 px-4">
-      <RealtimeRefresher tables={['knockout_encounters', 'sets', 'matches']} />
+    <PageShell width="wide">
+      <RealtimeRefresher
+        tables={['squad_encounters', 'squads', 'squad_members', 'matches', 'sets']}
+      />
 
-      <div className="max-w-5xl mx-auto">
-        <h1 className="font-bebas text-6xl text-sage text-center mb-2 tracking-wide">
-          CUADRO FINAL
-        </h1>
-        <p className="font-lato text-gray-500 text-center text-sm mb-14">
-          Fase eliminatoria · Torneo Tenis Urbanova 2026
-        </p>
+      <PageHeader
+        eyebrow="Fase eliminatoria"
+        title="CUADRO FINAL"
+        description="Desde cuartos se compite por escuadras: una pareja de cada categoría por bando y cuatro partidos por eliminatoria. Gana la escuadra que se lleve la mayoría."
+      />
 
-        {[1, 2, 3].map((lvl) => {
-          const lvlEnc = encounters.filter(e => e.level === lvl)
-          const sfs    = lvlEnc.filter(e => e.round === 'semifinal')
-          const final  = lvlEnc.find(e => e.round === 'final')
+      {!hasBracket ? (
+        <EmptyState
+          icon={<TrophyIcon />}
+          title="El cuadro aún no está formado"
+          description="Las escuadras se componen cuando termina la fase de grupos. Mientras tanto, sigue la carrera por clasificarse en la tabla de cada categoría."
+          action={<Button href="/grupos" variant="secondary">Ver clasificación</Button>}
+        />
+      ) : (
+        <div className="space-y-14">
+          {ROUND_ORDER.map(round => {
+            const ties = bracket.filter(b => b.round === round)
+            if (ties.length === 0) return null
+            const meta    = ROUNDS[round]
+            const isFinal = round === 'final'
+            const done    = ties.filter(t => t.resolution.isComplete).length
 
-          return (
-            <div key={lvl} className="mb-16">
-              <h2 className="font-bebas text-3xl text-gray-800 mb-8 pb-3 border-b border-gray-200 tracking-wide">
-                {LEVEL_LABELS[lvl]}
-              </h2>
-
-              {lvlEnc.length === 0 ? (
-                <p className="font-lato text-gray-400 italic text-sm">
-                  El cuadro aún no ha sido generado para este nivel.
-                </p>
-              ) : (
-                <div className="flex items-center gap-0 overflow-x-auto pb-4">
-                  {/* Semi-finals column */}
-                  <div className="flex flex-col gap-5 min-w-[230px] flex-shrink-0">
-                    <p className="font-lato font-bold text-xs text-gray-400 uppercase tracking-widest">
-                      Semifinales
-                    </p>
-                    {sfs.map(sf => <BracketCard key={sf.id} enc={sf} />)}
-                  </div>
-
-                  {/* Connector (desktop only) */}
-                  <div className="hidden md:flex items-center flex-shrink-0 mx-1">
-                    <BracketConnector />
-                  </div>
-
-                  {/* Final column */}
-                  <div className="flex flex-col justify-center min-w-[230px] flex-shrink-0 ml-4 md:ml-0">
-                    <p className="font-lato font-bold text-xs text-gray-400 uppercase tracking-widest mb-5">
-                      Final
-                    </p>
-                    {final?.match_id ? (
-                      <BracketCard enc={final} isFinal />
-                    ) : (
-                      <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center">
-                        <p className="font-lato text-gray-400 text-sm italic">Por determinar</p>
-                      </div>
-                    )}
-                  </div>
+            return (
+              <section key={round}>
+                <div className="mb-5 flex flex-wrap items-center gap-3 border-b border-hairline pb-4">
+                  <h2 className="font-display text-3xl text-fg">{meta.label.toUpperCase()}</h2>
+                  <Badge tone={isFinal ? 'sand' : 'neutral'} size="md">
+                    {ties.length} {ties.length === 1 ? 'eliminatoria' : 'eliminatorias'}
+                  </Badge>
+                  {done > 0 && (
+                    <Badge tone="accent" size="md" className="ml-auto">
+                      {done} resuelta{done === 1 ? '' : 's'}
+                    </Badge>
+                  )}
                 </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </main>
-  )
-}
 
-function BracketCard({ enc, isFinal = false }) {
-  const matchWinnerId = enc.match?.winner_id
-  const t1Won = matchWinnerId && matchWinnerId === enc.team1_id
-  const t2Won = matchWinnerId && matchWinnerId === enc.team2_id
+                <div
+                  className={
+                    isFinal
+                      ? 'mx-auto max-w-2xl'
+                      : 'grid gap-4 lg:grid-cols-2'
+                  }
+                >
+                  {ties.map((entry, i) => (
+                    <div
+                      key={entry.id}
+                      className="animate-fade-up"
+                      style={{ animationDelay: `${i * 60}ms` }}
+                    >
+                      {entry.is_reduced && (
+                        <div className="mb-2 flex items-center gap-2">
+                          <Badge tone="court" size="xs">Eliminatoria especial</Badge>
+                          <span className="text-[11px] text-fg-subtle">
+                            Solo Categorías 3 y 4 · 2 partidos
+                          </span>
+                        </div>
+                      )}
+                      <SquadEncounterCard entry={entry} isFinal={isFinal} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
 
-  const rows = [
-    { team: enc.team1, hasId: !!enc.team1_id, isWinner: t1Won },
-    { team: enc.team2, hasId: !!enc.team2_id, isWinner: t2Won },
-  ]
-
-  return (
-    <div className={`rounded-2xl overflow-hidden border-2 bg-white shadow-sm ${
-      isFinal ? 'border-gold' : 'border-gray-200'
-    }`}>
-      {rows.map(({ team, hasId, isWinner }, i) => (
-        <div
-          key={i}
-          className={`flex items-center justify-between px-4 py-3 ${
-            i === 0 ? 'border-b border-gray-100' : ''
-          } ${isWinner ? 'bg-sage/10' : ''}`}
-        >
-          <span className={`font-lato text-sm ${
-            isWinner ? 'font-bold text-sage'
-            : hasId   ? 'text-gray-800'
-            :            'text-gray-400 italic'
-          }`}>
-            {team?.name ?? (hasId ? '—' : 'Por determinar')}
-          </span>
-          {isWinner && <span className="text-sage text-xs font-bold ml-2">✓</span>}
-        </div>
-      ))}
-
-      {isFinal && !!matchWinnerId && (
-        <div className="bg-gold/20 px-4 py-2 text-center border-t border-gold/30">
-          <span className="font-bebas text-gold text-lg tracking-wide">
-            🏆 {enc.winner?.name ?? 'Campeón'}
-          </span>
+          <SpecialCaseNote />
         </div>
       )}
-    </div>
+    </PageShell>
   )
 }
 
-function BracketConnector() {
-  // Draws: two arms from SF1 (y≈40) and SF2 (y≈160) meeting at midpoint (y≈100),
-  // then a horizontal line right to the Final box.
+/** Explains the 7-team quirk in plain language, on the page where it bites. */
+function SpecialCaseNote() {
   return (
-    <svg width="48" height="200" viewBox="0 0 48 200" fill="none">
-      <line x1="0"  y1="40"  x2="24" y2="40"  stroke="#D1D5DB" strokeWidth="2" />
-      <line x1="0"  y1="160" x2="24" y2="160" stroke="#D1D5DB" strokeWidth="2" />
-      <line x1="24" y1="40"  x2="24" y2="160" stroke="#D1D5DB" strokeWidth="2" />
-      <line x1="24" y1="100" x2="48" y2="100" stroke="#D1D5DB" strokeWidth="2" />
+    <aside className="rounded-2xl border border-court-200/70 bg-court-50/50 p-5 dark:border-court-400/20 dark:bg-court-400/5">
+      <div className="flex gap-3.5">
+        <svg
+          width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"
+          className="mt-0.5 shrink-0 text-court-600 dark:text-court-300"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9.2" />
+          <path d="M12 16.5v-5M12 8h.01" />
+        </svg>
+        <div>
+          <p className="text-[13px] font-medium text-fg">
+            Por qué unos cuartos se juegan a solo dos partidos
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-fg-muted">
+            Las Categorías 1 y 2 tienen siete parejas, y su primera clasificada
+            pasa directamente a semifinales. Eso deja seis parejas de cada una
+            para los cuartos, frente a las ocho de las Categorías 3 y 4. Por
+            tanto una de las cuatro eliminatorias de cuartos la disputan
+            únicamente las parejas de Categoría 3 y 4. La escuadra que la gane
+            recibe sus parejas de Categoría 1 y 2 al llegar a semifinales.
+          </p>
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+function TrophyIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4.5a2.5 2.5 0 0 0 2.5 4M17 6h2.5a2.5 2.5 0 0 1-2.5 4M9 20h6M12 14v6" />
     </svg>
   )
 }
