@@ -44,10 +44,13 @@ export default async function Home() {
             </Badge>
           </div>
 
-          {/* The logo already carries the wordmark, so the page heading is
-              kept for search engines and screen readers rather than repeated
-              on screen. */}
-          <h1 className="sr-only">Torneo Tenis Urbanova 2026</h1>
+          <h1
+            className="animate-fade-up mt-5 font-display text-[15vw] leading-[0.88] text-fg sm:text-[11vw] md:text-8xl lg:text-9xl"
+            style={{ animationDelay: '110ms' }}
+          >
+            <span className="block">TORNEO TENIS</span>
+            <span className="block text-gradient">URBANOVA</span>
+          </h1>
 
           <p
             className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-fg-muted md:text-lg"
