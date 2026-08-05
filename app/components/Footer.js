@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Sponsors from './Sponsors'
+import Logo from './Logo'
 
 const SECTIONS = [
   {
@@ -16,7 +17,7 @@ const SECTIONS = [
     links: [
       { href: '/estadisticas', label: 'Estadísticas' },
       { href: '/galeria',      label: 'Galería'      },
-      { href: '/mvp',          label: 'Votación MVP' },
+      { href: '/premios',      label: 'Palmarés'     },
       { href: '/reglas',       label: 'Reglamento'   },
     ],
   },
@@ -32,10 +33,10 @@ export default function Footer() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
 
             <div className="lg:col-span-2">
-              <p className="font-display text-3xl text-fg">TORNEO TENIS URBANOVA</p>
-              <p className="mt-2 max-w-sm text-sm leading-relaxed text-fg-muted">
+              <Logo className="w-40" />
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-fg-muted">
                 III edición · de jueves a domingo en Urbanova, Alicante.
-                Cuatro divisiones, cuarenta parejas y un solo campeón por escuadra.
+                Cuatro divisiones, cuarenta parejas y un único equipo campeón.
               </p>
               <div className="mt-5 flex items-center gap-2">
                 <a

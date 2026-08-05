@@ -30,12 +30,12 @@ const RULES = [
     body: 'Pasan los dos primeros de cada grupo más los dos mejores terceros. En el sorteo de cuartos, los dos mejores primeros de grupo se enfrentan a los dos terceros clasificados; el primero de grupo restante juega contra el peor segundo; y los otros dos segundos se enfrentan entre sí.',
   },
   {
-    title: 'Las escuadras se forman después de los cuartos',
-    body: 'Solo cuando terminan los cuartos se crean las escuadras. Las cuatro parejas supervivientes de cada división se ordenan por su clasificación y se agrupan por rango: la mejor de cada división forma la primera escuadra, la segunda de cada división la segunda, y así hasta la cuarta. En la 1ª, 2ª y 4ª división ese orden sale de la clasificación general; en la 3ª se compara entre grupos por partidos ganados y por juegos.',
+    title: 'Los equipos se forman después de los cuartos',
+    body: 'Un equipo no es una pareja de la fase de grupos: solo existe a partir de semifinales y lo componen cuatro parejas, una de cada división. Cuando terminan los cuartos, las cuatro parejas supervivientes de cada división se ordenan por su clasificación y se agrupan por rango: la mejor de cada división forma el Equipo 1, la segunda de cada división el Equipo 2, y así hasta el cuarto. En la 1ª, 2ª y 4ª división ese orden sale de la clasificación general; en la 3ª se compara entre grupos por partidos ganados y por juegos.',
   },
   {
     title: 'Semifinales y final',
-    body: 'Ya no se compite en solitario. Cada eliminatoria enfrenta a dos escuadras en cuatro partidos, uno por división, y avanza la escuadra que gane la mayoría. Si queda 2–2 decide el total de sets ganados en la eliminatoria y, si el empate persiste, el total de juegos.',
+    body: 'Ya no se compite en solitario. Cada eliminatoria enfrenta a dos equipos en cuatro partidos, uno por división, y avanza el equipo que gane la mayoría. Si queda 2–2 decide el total de sets ganados en la eliminatoria y, si el empate persiste, el total de juegos.',
   },
   {
     title: 'Puntualidad',
@@ -64,7 +64,7 @@ export default function ReglasPage() {
       <section className="mb-14">
         <h2 className="mb-2 font-display text-2xl text-fg">EL FORMATO EN TRES ETAPAS</h2>
         <p className="mb-6 text-[14px] leading-relaxed text-fg-muted">
-          Se empieza compitiendo por parejas y se acaba compitiendo en escuadra.
+          Se empieza compitiendo por parejas y se acaba compitiendo en equipo.
         </p>
         <FormatExplainer />
         <SquadKeyPoint className="mt-5" />

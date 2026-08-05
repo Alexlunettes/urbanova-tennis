@@ -34,7 +34,7 @@ export default function KnockoutManager({ divisions, squads, bracket }) {
       <Step
         n="1"
         title="Sortear los cuartos"
-        note="Se juegan por parejas, no por escuadras. Necesita la fase de grupos terminada."
+        note="Se juegan por parejas, no por equipos. Necesita la fase de grupos terminada."
       >
         <div className="grid gap-3 sm:grid-cols-2">
           {LEVELS.map(level => {
@@ -89,7 +89,7 @@ export default function KnockoutManager({ divisions, squads, bracket }) {
       {/* ── Step 2: form the squads ── */}
       <Step
         n="2"
-        title="Formar las escuadras"
+        title="Formar los equipos"
         note="Las cuatro supervivientes de cada división se ordenan y se agrupan por rango."
         done={squadsFormed}
       >
@@ -118,7 +118,7 @@ export default function KnockoutManager({ divisions, squads, bracket }) {
           >
             {busy === 'squads'
               ? 'Formando…'
-              : squadsFormed ? 'Rehacer escuadras y semifinales' : 'Formar escuadras y sortear semifinales'}
+              : squadsFormed ? 'Rehacer equipos y semifinales' : 'Formar equipos y sortear semifinales'}
           </button>
 
           {squadsFormed && (
@@ -150,7 +150,7 @@ export default function KnockoutManager({ divisions, squads, bracket }) {
       <Step
         n="3"
         title="Montar la final"
-        note="Con las dos escuadras ganadoras de las semifinales."
+        note="Con los dos equipos ganadores de las semifinales."
         done={!!final?.squad1_id}
         last
       >

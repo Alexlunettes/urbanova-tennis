@@ -13,7 +13,7 @@ const LINKS = [
   { href: '/partidos',     label: 'Partidos'      },
   { href: '/estadisticas', label: 'Stats'         },
   { href: '/galeria',      label: 'Galería'       },
-  { href: '/mvp',          label: 'MVP'           },
+  { href: '/premios',      label: 'Palmarés'      },
   { href: '/reglas',       label: 'Reglas'        },
 ]
 
@@ -57,6 +57,7 @@ export default function Navbar() {
           <Link href="/" className="group flex items-center gap-2.5 shrink-0" aria-label="Inicio">
             <Logo
               variant="mark"
+              priority
               className="h-10 w-10 transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11"
             />
             <span className="hidden flex-col leading-none sm:flex">

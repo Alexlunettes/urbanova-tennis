@@ -352,7 +352,7 @@ function KnockoutView({ quarterfinalsByDivision, bracket, squads }) {
         <div>
           <p className="font-display text-3xl text-fg">CUADRO FINAL</p>
           <p className="mt-0.5 text-xs text-fg-subtle">
-            Cuartos por parejas · semifinales y final por escuadras
+            Cuartos por parejas · semifinales y final por equipos
           </p>
         </div>
         <Badge tone="neutral" size="md" className="ml-auto">
@@ -365,7 +365,7 @@ function KnockoutView({ quarterfinalsByDivision, bracket, squads }) {
           className="mt-8"
           icon={<TrophyIcon />}
           title="El cuadro aún no está formado"
-          description="Los cuartos se sortean cuando terminan los grupos. Las escuadras se forman después, con las parejas que sobrevivan."
+          description="Los cuartos se sortean cuando terminan los grupos. Los equipos se forman después, con las parejas que sobrevivan."
         />
       ) : (
         <div className="mt-8">

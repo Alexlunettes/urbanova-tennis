@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CATEGORY_META } from '@/lib/tournament'
+import { CATEGORY_META, LEVELS } from '@/lib/tournament'
 import { useStoredValue, setStoredValue } from '@/lib/hooks'
 import Badge from './ui/Badge'
 import { cn } from '@/lib/cn'
@@ -21,6 +21,7 @@ export default function MvpVoter({ players }) {
   const [error,    setError]    = useState('')
   const [counts,   setCounts]   = useState({})
   const [query,    setQuery]    = useState('')
+  const [division, setDivision] = useState('todas')
 
   // The prior vote lives in localStorage, read through an external store so
   // the server and client agree on first paint without a cascading render.
@@ -69,9 +70,11 @@ export default function MvpVoter({ players }) {
   const totalVotes = Object.values(counts).reduce((s, n) => s + n, 0)
   const leader     = Math.max(0, ...Object.values(counts))
 
-  const visible = players.filter(p =>
-    p.name.toLowerCase().includes(query.trim().toLowerCase()),
-  )
+  const visible = players.filter(p => {
+    if (division !== 'todas' && p.level !== division) return false
+    const q = query.trim().toLowerCase()
+    return !q || p.name.toLowerCase().includes(q) || (p.pair ?? '').toLowerCase().includes(q)
+  })
   const ordered = voted
     ? [...visible].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name, 'es'))
     : visible
@@ -107,6 +110,24 @@ export default function MvpVoter({ players }) {
         </p>
       )}
 
+      {/* ── Division filter ── */}
+      <div className="mb-3 -mx-1 flex flex-wrap gap-1.5 px-1">
+        {['todas', ...LEVELS].map(d => (
+          <button
+            key={d}
+            onClick={() => setDivision(d)}
+            className={cn(
+              'rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all',
+              division === d
+                ? 'border-accent bg-accent-soft text-accent'
+                : 'border-hairline bg-surface text-fg-muted hover:text-fg',
+            )}
+          >
+            {d === 'todas' ? 'Todas' : CATEGORY_META[d].name}
+          </button>
+        ))}
+      </div>
+
       {/* ── Search ── */}
       <div className="relative mb-6">
         <svg
@@ -120,7 +141,7 @@ export default function MvpVoter({ players }) {
           type="search"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar jugador…"
+          placeholder="Buscar jugador o pareja…"
           aria-label="Buscar jugador"
           className="h-11 w-full rounded-xl border border-hairline bg-surface pl-10 pr-4 text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none"
         />
@@ -151,8 +172,9 @@ export default function MvpVoter({ players }) {
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-[13.5px] font-medium text-fg">{player.name}</p>
-                    <p className="mt-0.5 text-[11px] text-fg-subtle">
-                      {CATEGORY_META[player.level]?.name ?? `Categoría ${player.level}`}
+                    <p className="mt-0.5 truncate text-[11px] text-fg-subtle">
+                      {CATEGORY_META[player.level]?.short ?? player.level}
+                      {player.pair ? ` · ${player.pair}` : ''}
                     </p>
                   </div>
                   {isMine   && <span title="Tu voto" aria-label="Tu voto">⭐</span>}

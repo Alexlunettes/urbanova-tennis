@@ -35,7 +35,7 @@ export default async function Home() {
 
         <div className="relative mx-auto max-w-5xl px-5 pt-12 pb-16 text-center sm:px-6 md:pt-16 md:pb-24">
           <div className="animate-fade-up flex justify-center">
-            <Logo className="h-24 w-24 drop-shadow-sm sm:h-28 sm:w-28" />
+            <Logo priority className="w-52 sm:w-64 md:w-72" />
           </div>
 
           <div className="animate-fade-up mt-6" style={{ animationDelay: '60ms' }}>
@@ -44,13 +44,10 @@ export default async function Home() {
             </Badge>
           </div>
 
-          <h1
-            className="animate-fade-up mt-5 font-display text-[15vw] leading-[0.88] text-fg sm:text-[11vw] md:text-8xl lg:text-9xl"
-            style={{ animationDelay: '110ms' }}
-          >
-            <span className="block">TORNEO TENIS</span>
-            <span className="block text-gradient">URBANOVA</span>
-          </h1>
+          {/* The logo already carries the wordmark, so the page heading is
+              kept for search engines and screen readers rather than repeated
+              on screen. */}
+          <h1 className="sr-only">Torneo Tenis Urbanova 2026</h1>
 
           <p
             className="animate-fade-up mx-auto mt-6 max-w-xl text-base leading-relaxed text-fg-muted md:text-lg"
@@ -148,7 +145,7 @@ export default async function Home() {
           <SectionHeading
             eyebrow="El formato"
             title="CÓMO FUNCIONA EL TORNEO"
-            description="Tres etapas. Se empieza compitiendo por parejas y se acaba compitiendo en escuadra."
+            description="Tres etapas. Se compite por parejas hasta los cuartos; los equipos — cuatro parejas, una por división — solo existen a partir de semifinales."
           />
           <div className="mt-10">
             <FormatExplainer />

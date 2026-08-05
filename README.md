@@ -2,7 +2,7 @@
 
 Live site for the Torneo Tenis Urbanova (III edition, 6–9 August 2026) —
 Thursday afternoon through Sunday afternoon. 40 pairs, four divisions, and a
-knockout stage that ends with combined squads.
+knockout stage that ends with combined teams (*equipos*).
 
 Next.js 16 (App Router, React Compiler) · Tailwind v4 · Supabase · Vercel.
 
@@ -34,14 +34,20 @@ best group winners draw the qualifying third-placed pairs, the remaining
 winner draws the weakest runner-up, and the other two runners-up meet. Every
 division ends with **four surviving pairs**.
 
-**Squads — formed after the quarterfinals, not before.** The four survivors of
-each division are ranked on their group-stage record (for division 3, compared
-across its groups) and grouped by rank: the best remaining pair of every
-division becomes Escuadra 1, the second-best of each Escuadra 2, and so on.
+**Equipos — formed after the quarterfinals, not before.** An *equipo* is not a
+group-stage pair: it comes into existence only at the semifinals and is made
+up of four pairs, one per division. The four survivors of each division are
+ranked on their group-stage record (for division 3, compared across its
+groups) and grouped by rank — the best remaining pair of every division becomes
+Equipo 1, the second-best of each Equipo 2, and so on.
 
-**Semifinals and final.** Squad versus squad over four matches, one per
-division. The squad winning the majority advances; 2–2 is broken by total
+**Semifinals and final.** Equipo versus equipo over four matches, one per
+division. The equipo winning the majority advances; 2–2 is broken by total
 sets, then total games.
+
+> In the database these rows are still called `squads` / `squad_members` /
+> `squad_encounters`. Only the user-facing wording changed; renaming the tables
+> would have meant a migration with no functional benefit.
 
 ## Getting started
 
@@ -91,7 +97,7 @@ results are being recorded, use the admin panel instead.
    match to pending.
 2. **Eliminatorias** — three steps in the order they happen:
    *Sortear los cuartos* per division (needs that division's groups finished),
-   then *Formar escuadras* once every quarterfinal is played (which also seeds
+   then *Formar equipos* once every quarterfinal is played (which also seeds
    the semifinals 1v4 and 2v3), then *Montar la final* once both semifinals are
    settled. Every step is safe to repeat — nothing already played is
    overwritten.
@@ -111,8 +117,11 @@ app/
   grupos/               Standings with qualification zones
   partidos/             Calendar + bracket, in two tabs
   cuadro/               Redirect into the bracket tab
-  estadisticas/         Per-player statistics
-  galeria/  mvp/  reglas/
+  estadisticas/         Per-pair statistics, by division
+  premios/              End-of-tournament awards + public MVP vote
+  galeria/              Photos 2026 / 2025 and interviews
+  mvp/  cuadro/         Redirects kept for previously shared links
+  reglas/
   admin/                Score entry and knockout manager
   api/                  Route handlers (all writes; service-role key)
   components/
@@ -124,7 +133,11 @@ lib/
   standings.js          League tables, incl. the four-match exception
   squads.js             Survivors, squad formation, tie resolution
   auth.js               Signed admin sessions
+  pair-stats.js         Per-pair tournament statistics
+  awards.js             Award definitions and winners
   sponsors.js           Sponsor roster
+  photos.js             Photo lists per edition
+  interviews.js         Interview videos (files or embeds)
 supabase/migrations/    Schema, in version control
 scripts/seed.mjs        Roster + fixture import
 ```
@@ -141,12 +154,19 @@ scripts/seed.mjs        Roster + fixture import
   Components use the semantic names (`bg-surface`, `text-fg-muted`,
   `border-hairline`), which is what makes light and dark mode work.
 
-## Sponsors
+## Content you will edit during the tournament
 
-Add entries to `lib/sponsors.js` and drop the artwork in `public/logos_sponsors/`.
-The footer section picks them up automatically. Logos render in greyscale and
-come to full colour on hover; entries without a logo show a placeholder tile,
-so the layout is right before the artwork arrives.
+| What | Where |
+| ---- | ----- |
+| Awards (Mejor Pareja, MVP, Mejor Jugador/a, Dúo Revelación) | `lib/awards.js` |
+| Photos | drop files in `public/fotos/2026/`, list them in `lib/photos.js` |
+| Interviews | drop files in `public/entrevistas/` or use an embed URL, list in `lib/interviews.js` |
+| Sponsors | `lib/sponsors.js`, artwork in `public/logos_sponsors/` |
+
+Sponsor artwork is supplied already black and white, so it is shown at full
+opacity with no greyscale filter — the old filter left logos permanently dimmed
+on touch devices. `tier: 'principal'` renders a sponsor larger, in its own row
+above the collaborators.
 
 ## Deployment
 

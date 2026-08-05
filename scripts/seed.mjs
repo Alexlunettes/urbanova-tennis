@@ -180,7 +180,7 @@ for (const c of CATEGORIES) {
   const r = { 1: 3, 2: 3, 3: 4, 4: 4 }[c.level]
   info(`${c.name}: ${r} cuartos entre parejas`)
 }
-info('Escuadras: se forman al terminar los cuartos (2 semifinales + 1 final)')
+info('Equipos: se forman al terminar los cuartos (2 semifinales + 1 final)')
 if (!DRY) {
   await insertAll('squad_encounters', encounters)
   ok(`inserted ${encounters.length} squad ties (2 semifinales + final)`)

@@ -4,8 +4,8 @@ import { cn } from '@/lib/cn'
 /**
  * How the tournament is put together, as a diagram rather than as prose.
  *
- * This replaces the old worked example, which showed a made-up "Escuadra A vs
- * Escuadra B" scoreline and read like a real result. Nothing here can be
+ * This replaces the old worked example, which showed a made-up "Equipo A vs
+ * Equipo B" scoreline and read like a real result. Nothing here can be
  * mistaken for a fixture: it is the shape of the competition, stage by stage.
  */
 export default function FormatExplainer() {
@@ -73,8 +73,8 @@ export default function FormatExplainer() {
 
       <Stage
         step="3"
-        title="Escuadras"
-        note="Semifinales y final · 4 partidos por eliminatoria"
+        title="Equipos"
+        note="Solo desde semifinales · 4 partidos por eliminatoria"
         accent
       >
         <div className="space-y-1.5">
@@ -84,7 +84,7 @@ export default function FormatExplainer() {
               className="flex items-center gap-2.5 rounded-lg border border-hairline bg-surface px-2.5 py-2"
             >
               <span className="tabular w-3 shrink-0 font-mono text-[10px] text-fg-subtle">{seed}</span>
-              <span className="min-w-0 flex-1 truncate text-[12px] text-fg">Escuadra {seed}</span>
+              <span className="min-w-0 flex-1 truncate text-[12px] text-fg">Equipo {seed}</span>
               <span className="flex shrink-0 gap-0.5">
                 {LEVELS.map(l => (
                   <span
@@ -98,8 +98,10 @@ export default function FormatExplainer() {
           ))}
         </div>
         <Footnote>
-          Las cuatro supervivientes de cada división se ordenan y se agrupan por
-          rango: la mejor de cada una forma la Escuadra 1, y así sucesivamente.
+          Un equipo no es una pareja de la fase de grupos: nace al llegar a
+          semifinales y lo forman cuatro parejas, una de cada división. Las
+          cuatro supervivientes de cada división se ordenan y se agrupan por
+          rango — la mejor de cada una forma el Equipo 1, y así sucesivamente.
         </Footnote>
       </Stage>
     </div>
@@ -168,8 +170,8 @@ export function SquadKeyPoint({ className }) {
         <span className="font-medium text-fg">
           Desde semifinales puedes perder tu partido y seguir en el torneo.
         </span>{' '}
-        Cada eliminatoria son cuatro partidos, uno por división, y pasa la
-        escuadra que gane la mayoría. Si acaba 2–2 deciden los sets y, después,
+        Cada eliminatoria son cuatro partidos, uno por división, y pasa el
+        equipo que gane la mayoría. Si acaba 2–2 deciden los sets y, después,
         los juegos.
       </p>
     </div>

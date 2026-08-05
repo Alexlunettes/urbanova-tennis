@@ -39,7 +39,7 @@ export default function Bracket({ quarterfinalsByDivision, semifinals, final, sq
 
         {/* ── The squad draw ── */}
         <section className="w-64 shrink-0 self-start">
-          <ColumnHeading title="Se forman las escuadras" note="Tras los cuartos" />
+          <ColumnHeading title="Se forman los equipos" note="Tras los cuartos" />
           <SquadDrawNote squads={squads} />
         </section>
 
@@ -47,7 +47,7 @@ export default function Bracket({ quarterfinalsByDivision, semifinals, final, sq
 
         {/* ── Column 2: semifinals ── */}
         <section className="w-80 shrink-0 self-center sm:w-88">
-          <ColumnHeading title="Semifinales" note="Escuadra vs escuadra · 4 partidos" />
+          <ColumnHeading title="Semifinales" note="Equipo vs equipo · 4 partidos" />
           <div className="space-y-5">
             {semifinals.length > 0
               ? semifinals.map(tie => <SquadNode key={tie.id} tie={tie} squads={squads} />)
@@ -179,12 +179,12 @@ function SquadDrawNote({ squads = [] }) {
       <p className="text-[12px] leading-relaxed text-fg-muted">
         Cada división termina los cuartos con <span className="font-medium text-fg">cuatro
         parejas vivas</span>. Se ordenan por su clasificación y se agrupan por
-        rango: la mejor de cada división forma la Escuadra 1, la segunda de cada
-        división la Escuadra 2, y así hasta la cuarta.
+        rango: la mejor de cada división forma el Equipo 1, la segunda de cada
+        división el Equipo 2, y así hasta el cuarto.
       </p>
 
       <div className="mt-3.5 space-y-1.5">
-        {(formed ? squads : [1, 2, 3, 4].map(seed => ({ id: seed, seed, name: `Escuadra ${seed}` })))
+        {(formed ? squads : [1, 2, 3, 4].map(seed => ({ id: seed, seed, name: `Equipo ${seed}` })))
           .map(squad => (
             <div
               key={squad.id ?? squad.seed}

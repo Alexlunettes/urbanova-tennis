@@ -13,7 +13,7 @@ import { survivorsForDivision, proposeSquads, SEMIFINAL_SEEDING } from '@/lib/sq
  * ranked on their group-stage record — for divisions 1, 2 and 4 that is the
  * overall table; for division 3, whose pairs come from three separate groups,
  * the same comparison is applied across them. The best remaining pair of each
- * division forms Escuadra 1, the second-best of each Escuadra 2, and so on.
+ * division forms Equipo 1, the second-best of each Equipo 2, and so on.
  *
  * The semifinals are then seeded 1v4 and 2v3, and each tie's four matches
  * (one per division) are created. Anything already played is left alone.
@@ -86,7 +86,7 @@ export async function POST() {
 
   if (playedSquadMatches?.length) {
     return NextResponse.json(
-      { error: 'Ya hay partidos de escuadra jugados. Bórralos antes de rehacer las escuadras.' },
+      { error: 'Ya hay partidos de equipo jugados. Bórralos antes de rehacer los equipos.' },
       { status: 400 },
     )
   }
@@ -163,6 +163,6 @@ export async function POST() {
     ok: true,
     squads: created.length,
     matches: matchRows.length,
-    message: `${created.length} escuadras formadas · semifinales sorteadas (1v4 y 2v3)`,
+    message: `${created.length} equipos formados · semifinales sorteadas (1v4 y 2v3)`,
   })
 }

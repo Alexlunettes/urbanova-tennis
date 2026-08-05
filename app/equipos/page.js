@@ -74,9 +74,9 @@ export default async function EquiposPage() {
                 </div>
                 <Badge tone="neutral" size="md">{categoryTeams.length} parejas</Badge>
                 <Badge tone="accent" size="md">
-                  {rules.directToSemis > 0
-                    ? `1ª a semis · ${rules.toQuarters} a cuartos`
-                    : `Top ${rules.toQuarters} a cuartos`}
+                  {rules.byes > 0
+                    ? `1ª a semis · ${rules.qualifiers} a cuartos`
+                    : `Top ${rules.qualifiers} a cuartos`}
                 </Badge>
               </div>
 
