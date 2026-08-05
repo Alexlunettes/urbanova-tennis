@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
+import Logo from './Logo'
 import { cn } from '@/lib/cn'
 
 const LINKS = [
   { href: '/equipos',      label: 'Parejas'       },
   { href: '/grupos',       label: 'Clasificación' },
   { href: '/partidos',     label: 'Partidos'      },
-  { href: '/cuadro',       label: 'Cuadro'        },
   { href: '/estadisticas', label: 'Stats'         },
   { href: '/galeria',      label: 'Galería'       },
   { href: '/mvp',          label: 'MVP'           },
@@ -55,11 +55,16 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between gap-4">
 
           <Link href="/" className="group flex items-center gap-2.5 shrink-0" aria-label="Inicio">
-            <Emblem />
-            <span className="hidden sm:flex flex-col leading-none">
-              <span className="font-display text-lg text-fg tracking-wide">URBANOVA</span>
-              <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-fg-subtle mt-0.5">
-                Torneo 24h · 2026
+            <Logo
+              variant="mark"
+              className="h-10 w-10 transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11"
+            />
+            <span className="hidden flex-col leading-none sm:flex">
+              <span className="font-display text-base tracking-wide text-fg xl:text-lg">
+                TORNEO TENIS URBANOVA
+              </span>
+              <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.18em] text-fg-subtle">
+                Urbanova, Alicante · 2026
               </span>
             </span>
           </Link>
@@ -131,25 +136,5 @@ export default function Navbar() {
         </div>
       )}
     </header>
-  )
-}
-
-/**
- * The tournament emblem reduced to something that still reads at 36px:
- * the crossed rackets in sun orange over the teal circle, with the horizon
- * line standing in for the clay/hard-court split.
- */
-function Emblem() {
-  return (
-    <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-b from-brand-600 to-brand-800 shadow-sm ring-1 ring-brand-950/25 transition-transform duration-300 group-hover:scale-105">
-      {/* clay half */}
-      <span className="absolute inset-x-0 bottom-0 h-[38%] bg-sand-500/85" />
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="relative" aria-hidden="true">
-        <circle cx="12" cy="9.6" r="6.2" fill="#f9e8cd" fillOpacity="0.95" />
-        <ellipse cx="9.7" cy="8.4" rx="2.5" ry="3.4" transform="rotate(-32 9.7 8.4)" stroke="#c05e1d" strokeWidth="1.15" />
-        <ellipse cx="14.3" cy="8.4" rx="2.5" ry="3.4" transform="rotate(32 14.3 8.4)" stroke="#c05e1d" strokeWidth="1.15" />
-        <path d="M10.9 11.7 9.6 15.4M13.1 11.7 14.4 15.4" stroke="#c05e1d" strokeWidth="1.3" strokeLinecap="round" />
-      </svg>
-    </span>
   )
 }

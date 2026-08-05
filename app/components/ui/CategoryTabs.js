@@ -13,7 +13,7 @@ export default function CategoryTabs({ basePath, active, showCounts = true }) {
     <div className="-mx-5 sm:mx-0 px-5 sm:px-0 overflow-x-auto no-scrollbar">
       <div
         role="tablist"
-        aria-label="Categorías"
+        aria-label="Divisiones"
         className="inline-flex gap-1 p-1 rounded-2xl bg-surface-2 border border-hairline min-w-max"
       >
         {LEVELS.map(level => {

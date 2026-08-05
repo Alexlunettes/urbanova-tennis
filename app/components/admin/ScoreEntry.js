@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CATEGORY_META, LEVELS, ROUNDS } from '@/lib/tournament'
+import { CATEGORY_META, LEVELS, ROUNDS, formatFor } from '@/lib/tournament'
 import { useAdminApi, Flash } from './useAdminApi'
 import Badge from '../ui/Badge'
 import { cn } from '@/lib/cn'
@@ -58,18 +58,28 @@ export default function ScoreEntry({ matches }) {
     ))
   }
 
+  // Group-stage matches are a single set; from the quarterfinals on it is
+  // best of two with a super tiebreak, which only appears once they split.
+  const format   = formatFor(selected?.stage ?? 'group_stage')
+  const baseSets = format.sets
+
   const filled = i => sets[i].team1_score !== '' && sets[i].team2_score !== ''
   const wonBy  = (i, side) =>
     filled(i) && Number(sets[i][`team${side}_score`]) > Number(sets[i][`team${side === 1 ? 2 : 1}_score`])
 
-  const t1After2 = [0, 1].filter(i => wonBy(i, 1)).length
-  const t2After2 = [0, 1].filter(i => wonBy(i, 2)).length
-  const needsThird = filled(0) && filled(1) && t1After2 === 1 && t2After2 === 1
-  const canSubmit  = filled(0) && filled(1) && (!needsThird || filled(2))
+  const baseIdx  = Array.from({ length: baseSets }, (_, i) => i)
+  const allBase  = baseIdx.every(filled)
+  const t1Base   = baseIdx.filter(i => wonBy(i, 1)).length
+  const t2Base   = baseIdx.filter(i => wonBy(i, 2)).length
+  const needsDecider = format.superTiebreak && allBase && t1Base === t2Base
+  const canSubmit = allBase && (!needsDecider || filled(baseSets))
 
   async function submit() {
     if (!canSubmit || !selected) return
-    const payload = [sets[0], sets[1], ...(needsThird ? [sets[2]] : [])].map((s, i) => ({
+    const payload = [
+      ...baseIdx.map(i => sets[i]),
+      ...(needsDecider ? [sets[baseSets]] : []),
+    ].map((s, i) => ({
       set_number:  i + 1,
       team1_score: Number(s.team1_score),
       team2_score: Number(s.team2_score),
@@ -161,7 +171,7 @@ export default function ScoreEntry({ matches }) {
               <div className="mb-4 flex items-center gap-2">
                 <Badge tone="neutral" size="xs">{CATEGORY_META[selected.level].short}</Badge>
                 <span className="text-[11px] text-fg-subtle">
-                  {ROUNDS[selected.stage]?.label ?? 'Fase de grupos'}
+                  {ROUNDS[selected.stage]?.label ?? 'Fase de grupos'} · {format.label}
                 </span>
               </div>
 
@@ -171,17 +181,22 @@ export default function ScoreEntry({ matches }) {
                 <p className="truncate text-right text-xs font-medium text-fg">{selected.team2?.name}</p>
               </div>
 
-              {[0, 1].map(i => (
-                <SetRow key={i} label={`SET ${i + 1}`} value={sets[i]} onChange={(side, v) => update(i, side, v)} />
+              {baseIdx.map(i => (
+                <SetRow
+                  key={i}
+                  label={baseSets === 1 ? 'SET' : `SET ${i + 1}`}
+                  value={sets[i]}
+                  onChange={(side, v) => update(i, side, v)}
+                />
               ))}
 
-              {needsThird && (
+              {needsDecider && (
                 <SetRow
                   label="SUPER TB"
                   accent
                   max={30}
-                  value={sets[2]}
-                  onChange={(side, v) => update(2, side, v)}
+                  value={sets[baseSets]}
+                  onChange={(side, v) => update(baseSets, side, v)}
                 />
               )}
 

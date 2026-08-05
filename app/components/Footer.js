@@ -8,7 +8,7 @@ const SECTIONS = [
       { href: '/equipos',  label: 'Parejas'       },
       { href: '/grupos',   label: 'Clasificación' },
       { href: '/partidos', label: 'Partidos'      },
-      { href: '/cuadro',   label: 'Cuadro final'  },
+      { href: '/partidos?vista=cuadro', label: 'Cuadro final' },
     ],
   },
   {
@@ -32,10 +32,10 @@ export default function Footer() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
 
             <div className="lg:col-span-2">
-              <p className="font-display text-3xl text-fg">TORNEO URBANOVA</p>
+              <p className="font-display text-3xl text-fg">TORNEO TENIS URBANOVA</p>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-fg-muted">
-                III edición · 24 horas de tenis sin parar en Urbanova, Alicante.
-                Cuatro categorías, cuarenta parejas y un solo campeón por escuadra.
+                III edición · de jueves a domingo en Urbanova, Alicante.
+                Cuatro divisiones, cuarenta parejas y un solo campeón por escuadra.
               </p>
               <div className="mt-5 flex items-center gap-2">
                 <a

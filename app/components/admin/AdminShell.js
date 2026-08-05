@@ -2,32 +2,18 @@
 
 import { useState } from 'react'
 import ScoreEntry from './ScoreEntry'
-import SquadBuilder from './SquadBuilder'
-import BracketBuilder from './BracketBuilder'
+import KnockoutManager from './KnockoutManager'
 import { cn } from '@/lib/cn'
 
 const TABS = [
-  { key: 'scores',  label: 'Resultados' },
-  { key: 'squads',  label: 'Escuadras'  },
-  { key: 'bracket', label: 'Cuadro'     },
+  { key: 'scores',   label: 'Resultados' },
+  { key: 'knockout', label: 'Eliminatorias' },
 ]
 
-export default function AdminShell({
-  groupMatches,
-  knockoutMatches,
-  squads,
-  encounters,
-  bracket,
-  standingsByCategory,
-  counts,
-}) {
+export default function AdminShell({ matches, divisions, squads, bracket, counts }) {
   const [tab, setTab] = useState('scores')
 
-  const badge = {
-    scores:  counts.pending,
-    squads:  squads.length,
-    bracket: counts.resolvedTies,
-  }
+  const badge = { scores: counts.pending, knockout: counts.resolvedTies }
 
   return (
     <div>
@@ -66,14 +52,9 @@ export default function AdminShell({
         </button>
       </div>
 
-      {tab === 'scores' && (
-        <ScoreEntry matches={[...knockoutMatches, ...groupMatches]} />
-      )}
-      {tab === 'squads' && (
-        <SquadBuilder squads={squads} standingsByCategory={standingsByCategory} />
-      )}
-      {tab === 'bracket' && (
-        <BracketBuilder encounters={encounters} squads={squads} bracket={bracket} />
+      {tab === 'scores'   && <ScoreEntry matches={matches} />}
+      {tab === 'knockout' && (
+        <KnockoutManager divisions={divisions} squads={squads} bracket={bracket} />
       )}
     </div>
   )

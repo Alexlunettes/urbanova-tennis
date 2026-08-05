@@ -30,11 +30,11 @@ export const metadata = {
     template: '%s · Torneo Tenis Urbanova',
   },
   description:
-    'III edición del Torneo de Tenis de Urbanova. 40 parejas, cuatro categorías y 24 horas de tenis sin parar. Urbanova, Alicante · 6–9 de agosto de 2026.',
-  keywords: ['tenis', 'torneo', 'Urbanova', 'Alicante', 'dobles', '24 horas'],
+    'III edición del Torneo Tenis Urbanova. 40 parejas y cuatro divisiones, de jueves a domingo. Urbanova, Alicante · 6–9 de agosto de 2026.',
+  keywords: ['tenis', 'torneo', 'Urbanova', 'Alicante', 'dobles', 'Torneo Tenis Urbanova'],
   openGraph: {
     title:       'Torneo Tenis Urbanova 2026',
-    description: '40 parejas · 4 categorías · 24 horas de tenis. Urbanova, Alicante.',
+    description: '40 parejas · 4 divisiones · de jueves a domingo. Urbanova, Alicante.',
     locale:      'es_ES',
     type:        'website',
   },

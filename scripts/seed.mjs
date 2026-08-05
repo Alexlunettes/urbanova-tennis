@@ -14,7 +14,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
-import { CATEGORIES, TEAMS, FIXTURES, slotToISO } from '../lib/tournament-data.js'
+import { CATEGORIES, TEAMS, FIXTURES, GROUPS, GROUP_BY_TEAM, slotToISO } from '../lib/tournament-data.js'
 
 // ── Load .env.local without adding a dotenv dependency ─────────────────────
 for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
@@ -123,32 +123,35 @@ if (!DRY) {
   ok(`inserted ${inserted.length} teams`)
 }
 
-step('5. Category tables')
-// One group per category — the Champions-League format is a single league
-// table per category, so the old Grupo A / Grupo B split no longer applies.
-const groupIdByLevel = {}
+step('5. Group tables')
+// Divisions 1, 2 and 4 play as a single table. Division 3's twelve pairs are
+// split into three groups of four, each a complete round robin.
+const groupIdBySlug = {}
+for (const g of GROUPS) {
+  info(`${g.name} (División ${g.level}): ${g.teams.length} parejas`)
+}
 if (!DRY) {
-  const groups = await insertAll(
+  const inserted = await insertAll(
     'tournament_groups',
-    CATEGORIES.map(c => ({ name: c.name, level: c.level })),
-    'id, level'
+    GROUPS.map(g => ({ name: g.name, level: g.level })),
+    'id, name'
   )
-  for (const g of groups) groupIdByLevel[g.level] = g.id
-  ok(`inserted ${groups.length} category tables`)
+  GROUPS.forEach((g, i) => { groupIdBySlug[g.id] = inserted[i].id })
+  ok(`inserted ${inserted.length} group tables`)
 
   const entries = TEAMS.map(t => ({
-    group_id: groupIdByLevel[t.level],
+    group_id: groupIdBySlug[GROUP_BY_TEAM[t.id].id],
     team_id:  teamIdBySlug[t.id],
   }))
   await insertAll('group_entries', entries)
-  ok(`inserted ${entries.length} category entries`)
+  ok(`inserted ${entries.length} group entries`)
 }
 
 step('6. Group-stage fixtures')
 const matchRows = FIXTURES.map(([day, time, court, a, b]) => ({
   level:        TEAMS.find(t => t.id === a).level,
   stage:        'group_stage',
-  group_id:     DRY ? null : groupIdByLevel[TEAMS.find(t => t.id === a).level],
+  group_id:     DRY ? null : groupIdBySlug[GROUP_BY_TEAM[a].id],
   team1_id:     DRY ? null : teamIdBySlug[a],
   team2_id:     DRY ? null : teamIdBySlug[b],
   court,
@@ -164,22 +167,23 @@ if (!DRY) {
   ok(`inserted ${inserted.length} fixtures`)
 }
 
-step('7. Knockout bracket skeleton')
-// Four quarterfinals, two semifinals, one final. Squads are assigned by hand
-// in the admin panel once the group stage finishes.
-// QF position 4 is the reduced one: Categories 1 and 2 have only 7 teams, so
-// their group winners go straight to the semifinals and this tie is contested
-// by Categories 3 and 4 alone.
+step('7. Knockout skeleton')
+// Quarterfinals are played by INDIVIDUAL PAIRS, division by division, so they
+// are ordinary match rows created from the admin panel once the group tables
+// are final — nothing to pre-create here.
+// Squads only exist from the semifinals on: two semifinals and one final.
 const encounters = [
-  ...[1, 2, 3, 4].map(p => ({ round: 'quarterfinal', position: p, is_reduced: p === 4 })),
-  ...[1, 2].map(p => ({ round: 'semifinal', position: p, is_reduced: false })),
-  { round: 'final', position: 1, is_reduced: false },
+  ...[1, 2].map(p => ({ round: 'semifinal', position: p })),
+  { round: 'final', position: 1 },
 ]
-info('QF1–QF3 full (4 matches) · QF4 reduced to Categories 3+4 (2 matches)')
-info('SF1–SF2 and the Final are full squad encounters')
+for (const c of CATEGORIES) {
+  const r = { 1: 3, 2: 3, 3: 4, 4: 4 }[c.level]
+  info(`${c.name}: ${r} cuartos entre parejas`)
+}
+info('Escuadras: se forman al terminar los cuartos (2 semifinales + 1 final)')
 if (!DRY) {
   await insertAll('squad_encounters', encounters)
-  ok(`inserted ${encounters.length} bracket slots`)
+  ok(`inserted ${encounters.length} squad ties (2 semifinales + final)`)
 }
 
 console.log(

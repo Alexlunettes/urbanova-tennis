@@ -1,32 +1,45 @@
-import { CATEGORY_RULES, CATEGORY_META, LEVELS } from '@/lib/tournament'
-import SquadExplainer from '@/app/components/SquadExplainer'
+import { CATEGORY_RULES, CATEGORY_META, CATEGORY_COLOR, LEVELS, formatFor } from '@/lib/tournament'
+import FormatExplainer, { SquadKeyPoint } from '@/app/components/FormatExplainer'
 import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
 import Card from '@/app/components/ui/Card'
 import Badge from '@/app/components/ui/Badge'
 import Button from '@/app/components/ui/Button'
+import { cn } from '@/lib/cn'
 
 export const metadata = { title: 'Reglamento' }
 
 const RULES = [
   {
     title: 'Modalidad',
-    body: 'Torneo de dobles. Todos los partidos se juegan al mejor de 3 sets. El tercer set, si se llega a él, se disputa como super tiebreak — primero en llegar a 10 puntos con diferencia de 2.',
+    body: 'Torneo de dobles, de jueves por la tarde a domingo por la tarde. Los partidos de la fase de grupos se juegan a un solo set. Desde cuartos de final se juega al mejor de 2 sets, con super tiebreak a 10 puntos si se llega empatados a un set.',
   },
   {
     title: 'Fase de grupos',
-    body: 'Cada categoría disputa su propia liga en formato Champions League: no se juega contra todos los rivales, sino contra un grupo reducido de ellos. La clasificación se ordena por victorias, después por derrotas, después por diferencia de sets y finalmente por diferencia de juegos.',
+    body: 'Cada división compite por separado. La 1ª, la 2ª y la 4ª juegan como un único grupo; la 3ª se divide en tres grupos de cuatro parejas que juegan todos contra todos. La clasificación se ordena primero por partidos ganados y, en caso de empate, por juegos ganados y perdidos.',
   },
   {
-    title: 'Fase eliminatoria por escuadras',
-    body: 'A partir de cuartos de final las parejas dejan de competir por su cuenta. Se forman escuadras con una pareja de cada categoría, y cada eliminatoria consiste en cuatro partidos simultáneos, uno por categoría. Avanza la escuadra que gane la mayoría. Si el resultado queda 2–2, decide el total de sets ganados y, si persiste el empate, el total de juegos.',
+    title: 'Las parejas con cuatro partidos',
+    body: 'Rocío y Carla en la 1ª división, y Héctor y Alexander en la 2ª, juegan un partido más que el resto. Para no salir beneficiadas ni perjudicadas, de sus cuatro resultados solo cuentan tres: sus dos mejores y el peor. El tercer mejor resultado se descarta.',
   },
   {
-    title: 'La eliminatoria especial de cuartos',
-    body: 'Las Categorías 1 y 2 solo tienen siete parejas y su primera clasificada pasa directa a semifinales. Eso deja seis parejas de cada una para cuartos, frente a ocho de las Categorías 3 y 4. Por eso una de las cuatro eliminatorias de cuartos la juegan solo las parejas de Categoría 3 y 4, a dos partidos. La escuadra ganadora recibe sus parejas de Categoría 1 y 2 en semifinales.',
+    title: 'Cuartos de final — todavía por parejas',
+    body: 'En cuartos siguen compitiendo las parejas por su cuenta, división por división. En la 1ª y la 2ª división el primero de grupo pasa directo a semifinales y el resto se cruza 2º-7º, 3º-6º y 4º-5º. En la 3ª y la 4ª se clasifican ocho parejas y se disputan cuatro cruces. Cada división llega al final de los cuartos con cuatro parejas vivas.',
+  },
+  {
+    title: 'Clasificación de la 3ª división',
+    body: 'Pasan los dos primeros de cada grupo más los dos mejores terceros. En el sorteo de cuartos, los dos mejores primeros de grupo se enfrentan a los dos terceros clasificados; el primero de grupo restante juega contra el peor segundo; y los otros dos segundos se enfrentan entre sí.',
+  },
+  {
+    title: 'Las escuadras se forman después de los cuartos',
+    body: 'Solo cuando terminan los cuartos se crean las escuadras. Las cuatro parejas supervivientes de cada división se ordenan por su clasificación y se agrupan por rango: la mejor de cada división forma la primera escuadra, la segunda de cada división la segunda, y así hasta la cuarta. En la 1ª, 2ª y 4ª división ese orden sale de la clasificación general; en la 3ª se compara entre grupos por partidos ganados y por juegos.',
+  },
+  {
+    title: 'Semifinales y final',
+    body: 'Ya no se compite en solitario. Cada eliminatoria enfrenta a dos escuadras en cuatro partidos, uno por división, y avanza la escuadra que gane la mayoría. Si queda 2–2 decide el total de sets ganados en la eliminatoria y, si el empate persiste, el total de juegos.',
   },
   {
     title: 'Puntualidad',
-    body: 'Es obligatorio estar listo para jugar en el horario asignado. Un retraso de más de 15 minutos sin aviso previo se considera derrota por incomparecencia. El torneo dura 24 horas seguidas y un retraso arrastra a todas las pistas.',
+    body: 'Es obligatorio estar listo para jugar en el horario asignado. Un retraso de más de 15 minutos sin aviso previo se considera derrota por incomparecencia. Las pistas van encadenadas, así que un retraso arrastra a todos los partidos siguientes.',
   },
   {
     title: 'Material',
@@ -42,65 +55,64 @@ export default function ReglasPage() {
   return (
     <PageShell width="narrow">
       <PageHeader
-        eyebrow="Torneo Urbanova 2026"
+        eyebrow="Torneo Tenis Urbanova 2026"
         title="REGLAMENTO"
         description="Todo lo que necesitas saber para competir, de la fase de grupos a la final."
       />
+
+      {/* ── The three stages ── */}
+      <section className="mb-14">
+        <h2 className="mb-2 font-display text-2xl text-fg">EL FORMATO EN TRES ETAPAS</h2>
+        <p className="mb-6 text-[14px] leading-relaxed text-fg-muted">
+          Se empieza compitiendo por parejas y se acaba compitiendo en escuadra.
+        </p>
+        <FormatExplainer />
+        <SquadKeyPoint className="mt-5" />
+      </section>
 
       {/* ── Qualification at a glance ── */}
       <section className="mb-14">
         <h2 className="mb-4 font-display text-2xl text-fg">CÓMO SE CLASIFICA</h2>
         <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-125 text-sm">
+            <table className="w-full min-w-140 text-sm">
               <thead>
                 <tr className="border-b border-hairline bg-surface-2/60">
-                  <th className="px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle">
-                    Categoría
-                  </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle">
-                    Parejas
-                  </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle">
-                    A semifinales
-                  </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle">
-                    A cuartos
-                  </th>
-                  <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle">
-                    Eliminadas
-                  </th>
+                  <Th className="text-left">División</Th>
+                  <Th>Parejas</Th>
+                  <Th>Grupos</Th>
+                  <Th>A semis</Th>
+                  <Th>A cuartos</Th>
+                  <Th>Cruces</Th>
+                  <Th className="pr-4">Vivas tras cuartos</Th>
                 </tr>
               </thead>
               <tbody>
                 {LEVELS.map(level => {
                   const r = CATEGORY_RULES[level]
-                  const out = r.teams - r.qualifiers
                   return (
                     <tr key={level} className="border-b border-hairline last:border-0">
                       <td className="px-4 py-3.5">
                         <span className="flex items-center gap-2">
-                          <span className="font-display text-lg text-accent/40">
-                            {CATEGORY_META[level].short}
-                          </span>
+                          <span className={cn('h-2 w-2 rounded-full', CATEGORY_COLOR[level].dot)} />
                           <span className="text-[13px] font-medium text-fg">
                             {CATEGORY_META[level].name}
                           </span>
                         </span>
                       </td>
-                      <td className="tabular px-3 py-3.5 text-center font-mono text-[13px] text-fg-muted">
-                        {r.teams}
-                      </td>
+                      <Td>{r.teams}</Td>
+                      <Td>{r.groups}</Td>
                       <td className="px-3 py-3.5 text-center">
-                        {r.directToSemis > 0
-                          ? <Badge tone="sand" size="xs">1ª clasificada</Badge>
+                        {r.byes > 0
+                          ? <Badge tone="sand" size="xs">1ª directa</Badge>
                           : <span className="text-fg-subtle">—</span>}
                       </td>
-                      <td className="tabular px-3 py-3.5 text-center font-mono text-[13px] font-medium text-fg">
-                        {r.toQuarters}
-                      </td>
-                      <td className="tabular px-4 py-3.5 text-center font-mono text-[13px] text-fg-subtle">
-                        {out > 0 ? out : '—'}
+                      <Td strong>{r.qualifiers}</Td>
+                      <Td>{r.quarterfinals}</Td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span className="tabular rounded bg-accent-soft px-2 py-0.5 font-mono text-[12px] font-medium text-accent">
+                          {r.survivors}
+                        </span>
                       </td>
                     </tr>
                   )
@@ -109,16 +121,10 @@ export default function ReglasPage() {
             </table>
           </div>
         </div>
-      </section>
-
-      {/* ── The squad format ── */}
-      <section className="mb-14">
-        <h2 className="mb-2 font-display text-2xl text-fg">CÓMO FUNCIONA UNA ESCUADRA</h2>
-        <p className="mb-6 text-[14px] leading-relaxed text-fg-muted">
-          Este es el cambio más importante del formato. Un ejemplo real de
-          eliminatoria:
+        <p className="mt-3 px-1 text-[11px] text-fg-subtle">
+          Fase de grupos: {formatFor('group_stage').label}. Desde cuartos:{' '}
+          {formatFor('quarterfinal').label.toLowerCase()}.
         </p>
-        <SquadExplainer />
       </section>
 
       {/* ── The rules themselves ── */}
@@ -151,5 +157,23 @@ export default function ReglasPage() {
         </Button>
       </Card>
     </PageShell>
+  )
+}
+
+function Th({ children, className }) {
+  return (
+    <th className={cn('px-3 py-3 text-center text-[10px] font-medium uppercase tracking-[0.12em] text-fg-subtle', className)}>
+      {children}
+    </th>
+  )
+}
+
+function Td({ children, strong = false }) {
+  return (
+    <td className="px-3 py-3.5 text-center">
+      <span className={cn('tabular font-mono text-[13px]', strong ? 'font-medium text-fg' : 'text-fg-muted')}>
+        {children}
+      </span>
+    </td>
   )
 }
