@@ -48,13 +48,10 @@ export default function Sponsors({ className, title = 'Con el apoyo de', compact
         )}
 
         {standard.length > 0 && (
-          <div
-            className={cn(
-              'grid gap-3 sm:gap-4',
-              'grid-cols-2 sm:grid-cols-3',
-              standard.length > 4 ? 'lg:grid-cols-6' : 'lg:grid-cols-4',
-            )}
-          >
+          // Centred flex rather than a grid: the roster length changes as
+          // sponsors are added, and this keeps an orphaned last row centred
+          // instead of stranded against the left edge.
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
             {standard.map((s, i) => (
               <SponsorTile key={`s-${i}`} sponsor={s} compact={compact} />
             ))}
@@ -98,7 +95,14 @@ function SponsorTile({ sponsor, principal = false, compact = false }) {
     'hover:border-hairline-strong hover:shadow-md hover:-translate-y-0.5',
     // Greyscale by default, full colour on hover.
     logo && 'grayscale opacity-65 hover:grayscale-0 hover:opacity-100',
-    principal ? 'h-28 w-56 sm:h-32 sm:w-72' : compact ? 'h-20' : 'h-24 sm:h-28',
+    principal
+      ? 'h-28 w-56 sm:h-32 sm:w-72'
+      : cn(
+          // Fixed basis so every tile is the same size regardless of how many
+          // there are: two per row on phones, growing to six on desktop.
+          'w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-0.667rem)] lg:w-44',
+          compact ? 'h-20' : 'h-24 sm:h-26',
+        ),
   )
 
   if (url) {

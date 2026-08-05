@@ -4,51 +4,52 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN TOKENS
-   Palette drawn from the tournament emblem — evergreen court, sand, sea blue —
-   but rebuilt as full scales so contrast can be tuned properly rather than
-   leaning on opacity. These are raw scales; the semantic tokens further down
-   are what components should actually reference.
+   Palette sampled directly from the tournament emblem: petrol teal (palms,
+   court, lettering), sun orange (the clay half and the rackets) and the pale
+   sage of the sky. Rebuilt as full scales so contrast can be tuned properly
+   rather than leaning on opacity. These are the raw scales; the semantic
+   tokens further down are what components should actually reference.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── Brand: evergreen ─────────────────────────────────────────────────── */
-  --color-brand-50:  #eefaf3;
-  --color-brand-100: #d5f2e2;
-  --color-brand-200: #ade4c9;
-  --color-brand-300: #77cfa8;
-  --color-brand-400: #43b285;
-  --color-brand-500: #1f966a;
-  --color-brand-600: #117855;
-  --color-brand-700: #0d5f45;
-  --color-brand-800: #0d4b38;
-  --color-brand-900: #0c3e30;
-  --color-brand-950: #04231b;
+  /* ── Brand: petrol teal — the emblem's dominant colour ────────────────── */
+  --color-brand-50:  #eff9f9;
+  --color-brand-100: #d5f0f1;
+  --color-brand-200: #ade0e3;
+  --color-brand-300: #7ac9ce;
+  --color-brand-400: #45aab2;
+  --color-brand-500: #2b8d96;
+  --color-brand-600: #23737d;
+  --color-brand-700: #215d66;
+  --color-brand-800: #224d54;
+  --color-brand-900: #204147;
+  --color-brand-950: #10282d;
 
-  /* ── Accent: sand / champagne — trophies, winners, highlights ─────────── */
-  --color-sand-50:  #fdf8ed;
-  --color-sand-100: #f9edd0;
-  --color-sand-200: #f2d99e;
-  --color-sand-300: #e9be65;
-  --color-sand-400: #e2a53d;
-  --color-sand-500: #d98c26;
-  --color-sand-600: #c06d1c;
-  --color-sand-700: #9f5019;
-  --color-sand-800: #82401b;
-  --color-sand-900: #6b3619;
-  --color-sand-950: #3d1b09;
+  /* ── Accent: sun orange — trophies, winners, the final ────────────────── */
+  --color-sand-50:  #fdf6ec;
+  --color-sand-100: #f9e8cd;
+  --color-sand-200: #f2d09b;
+  --color-sand-300: #ebb166;
+  --color-sand-400: #e29340;
+  --color-sand-500: #d97a27;
+  --color-sand-600: #c05e1d;
+  --color-sand-700: #9f451b;
+  --color-sand-800: #82381c;
+  --color-sand-900: #6b301a;
+  --color-sand-950: #3b160a;
 
-  /* ── Secondary: sea — courts, schedules, live states ──────────────────── */
-  --color-court-50:  #eff9fb;
-  --color-court-100: #d7eff4;
-  --color-court-200: #b3dfea;
-  --color-court-300: #7fc7db;
-  --color-court-400: #44a5c4;
-  --color-court-500: #2988a9;
-  --color-court-600: #246e8e;
-  --color-court-700: #245a74;
-  --color-court-800: #264b60;
-  --color-court-900: #234052;
-  --color-court-950: #122936;
+  /* ── Secondary: sage — the emblem's sky. Scheduled and pending states. ── */
+  --color-court-50:  #f2f7f3;
+  --color-court-100: #e0ebe2;
+  --color-court-200: #c3d8c8;
+  --color-court-300: #9dbda5;
+  --color-court-400: #739b7e;
+  --color-court-500: #547f60;
+  --color-court-600: #40664b;
+  --color-court-700: #35523e;
+  --color-court-800: #2d4234;
+  --color-court-900: #27382d;
+  --color-court-950: #131f17;
 
   /* ── Neutrals: very slightly warm, so the page never looks clinical ───── */
   --color-ink-50:  #f7f7f5;
@@ -70,12 +71,12 @@
 
   /* ── Elevation. Layered low-alpha shadows read as depth rather than as a
          grey smudge — the Stripe/Linear approach. ───────────────────────── */
-  --shadow-xs:   0 1px 2px 0 rgb(12 15 14 / 0.04);
-  --shadow-sm:   0 1px 2px 0 rgb(12 15 14 / 0.05), 0 1px 3px 0 rgb(12 15 14 / 0.05);
-  --shadow-md:   0 2px 4px -1px rgb(12 15 14 / 0.05), 0 4px 12px -2px rgb(12 15 14 / 0.08);
-  --shadow-lg:   0 4px 8px -2px rgb(12 15 14 / 0.06), 0 12px 28px -6px rgb(12 15 14 / 0.12);
-  --shadow-xl:   0 8px 16px -4px rgb(12 15 14 / 0.08), 0 24px 48px -12px rgb(12 15 14 / 0.18);
-  --shadow-glow: 0 0 0 1px rgb(31 150 106 / 0.16), 0 8px 32px -8px rgb(31 150 106 / 0.28);
+  --shadow-xs:   0 1px 2px 0 rgb(16 40 45 / 0.04);
+  --shadow-sm:   0 1px 2px 0 rgb(16 40 45 / 0.05), 0 1px 3px 0 rgb(16 40 45 / 0.05);
+  --shadow-md:   0 2px 4px -1px rgb(16 40 45 / 0.05), 0 4px 12px -2px rgb(16 40 45 / 0.08);
+  --shadow-lg:   0 4px 8px -2px rgb(16 40 45 / 0.06), 0 12px 28px -6px rgb(16 40 45 / 0.12);
+  --shadow-xl:   0 8px 16px -4px rgb(16 40 45 / 0.08), 0 24px 48px -12px rgb(16 40 45 / 0.18);
+  --shadow-glow: 0 0 0 1px rgb(43 141 150 / 0.16), 0 8px 32px -8px rgb(43 141 150 / 0.28);
 
   /* ── Motion. One easing curve throughout keeps the app feeling coherent. */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
@@ -92,9 +93,9 @@
 @keyframes scale-in { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: none } }
 @keyframes shimmer  { from { background-position: 200% 0 } to { background-position: -200% 0 } }
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgb(41 136 169 / 0.5) }
-  70%  { box-shadow: 0 0 0 7px rgb(41 136 169 / 0) }
-  100% { box-shadow: 0 0 0 0 rgb(41 136 169 / 0) }
+  0%   { box-shadow: 0 0 0 0 rgb(43 141 150 / 0.5) }
+  70%  { box-shadow: 0 0 0 7px rgb(43 141 150 / 0) }
+  100% { box-shadow: 0 0 0 0 rgb(43 141 150 / 0) }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -118,33 +119,33 @@
 }
 
 :root {
-  --canvas:          #fbfbf9;
+  --canvas:          #fafaf8;
   --surface:         #ffffff;
-  --surface-2:       #f7f7f5;
-  --hairline:        rgb(12 15 14 / 0.08);
-  --hairline-strong: rgb(12 15 14 / 0.14);
-  --fg:              #15151a;
-  --fg-muted:        #5c5c57;
-  --fg-subtle:       #91918a;
-  --accent:          #117855;
+  --surface-2:       #f4f5f4;
+  --hairline:        rgb(16 40 45 / 0.09);
+  --hairline-strong: rgb(16 40 45 / 0.16);
+  --fg:              #14191a;
+  --fg-muted:        #566063;
+  --fg-subtle:       #8a9497;
+  --accent:          #23737d;
   --accent-fg:       #ffffff;
-  --accent-soft:     #eefaf3;
+  --accent-soft:     #eff9f9;
 
   color-scheme: light;
 }
 
 .dark {
-  --canvas:          #0a0d0c;
-  --surface:         #121614;
-  --surface-2:       #181d1b;
+  --canvas:          #0a0e0f;
+  --surface:         #111718;
+  --surface-2:       #171f20;
   --hairline:        rgb(255 255 255 / 0.09);
-  --hairline-strong: rgb(255 255 255 / 0.16);
-  --fg:              #f2f4f3;
-  --fg-muted:        #a3aba7;
-  --fg-subtle:       #717976;
-  --accent:          #43b285;
-  --accent-fg:       #04231b;
-  --accent-soft:     rgb(67 178 133 / 0.12);
+  --hairline-strong: rgb(255 255 255 / 0.17);
+  --fg:              #eef3f3;
+  --fg-muted:        #9daaac;
+  --fg-subtle:       #6c7a7c;
+  --accent:          #45aab2;
+  --accent-fg:       #06181b;
+  --accent-soft:     rgb(69 170 178 / 0.13);
 
   color-scheme: dark;
 }
@@ -223,9 +224,10 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
   }
 
-  /* Used sparingly — the hero wordmark only. */
+  /* Used sparingly — the hero wordmark only. Runs the emblem's own two
+     colours, teal into sun orange. */
   .text-gradient {
-    background-image: linear-gradient(120deg, var(--fg) 20%, var(--color-brand-500) 65%, var(--color-sand-400) 100%);
+    background-image: linear-gradient(115deg, var(--color-brand-700) 5%, var(--color-brand-500) 45%, var(--color-sand-400) 100%);
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;

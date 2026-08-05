@@ -134,14 +134,21 @@ export default function Navbar() {
   )
 }
 
-/** Crossed rackets over a court — the emblem reduced to something legible at 36px. */
+/**
+ * The tournament emblem reduced to something that still reads at 36px:
+ * the crossed rackets in sun orange over the teal circle, with the horizon
+ * line standing in for the clay/hard-court split.
+ */
 function Emblem() {
   return (
-    <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-brand-600 to-brand-800 shadow-sm ring-1 ring-brand-950/20 transition-transform duration-300 group-hover:scale-105">
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <ellipse cx="8.2" cy="8.2" rx="4.1" ry="5.4" transform="rotate(-45 8.2 8.2)" stroke="#f9edd0" strokeWidth="1.5" />
-        <ellipse cx="15.8" cy="8.2" rx="4.1" ry="5.4" transform="rotate(45 15.8 8.2)" stroke="#f9edd0" strokeWidth="1.5" />
-        <path d="M10.4 12.4 8 21M13.6 12.4 16 21" stroke="#e9be65" strokeWidth="1.5" strokeLinecap="round" />
+    <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-linear-to-b from-brand-600 to-brand-800 shadow-sm ring-1 ring-brand-950/25 transition-transform duration-300 group-hover:scale-105">
+      {/* clay half */}
+      <span className="absolute inset-x-0 bottom-0 h-[38%] bg-sand-500/85" />
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="relative" aria-hidden="true">
+        <circle cx="12" cy="9.6" r="6.2" fill="#f9e8cd" fillOpacity="0.95" />
+        <ellipse cx="9.7" cy="8.4" rx="2.5" ry="3.4" transform="rotate(-32 9.7 8.4)" stroke="#c05e1d" strokeWidth="1.15" />
+        <ellipse cx="14.3" cy="8.4" rx="2.5" ry="3.4" transform="rotate(32 14.3 8.4)" stroke="#c05e1d" strokeWidth="1.15" />
+        <path d="M10.9 11.7 9.6 15.4M13.1 11.7 14.4 15.4" stroke="#c05e1d" strokeWidth="1.3" strokeLinecap="round" />
       </svg>
     </span>
   )

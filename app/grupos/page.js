@@ -12,11 +12,16 @@ export const revalidate = 0 // Standings must never be served stale.
 
 export const metadata = { title: 'Clasificación' }
 
-/** Row treatment per qualification zone. */
+/**
+ * Row treatment per qualification zone.
+ * The bars use the 500/600 steps rather than 400: at 400 the orange only
+ * reaches 2.5:1 against white, below the 3:1 WCAG needs for a non-text
+ * indicator that carries meaning on its own.
+ */
 const ZONE = {
-  semifinal:    { bar: 'bg-sand-400',    tint: 'bg-sand-50/60 dark:bg-sand-400/[0.07]',   label: 'Semifinales' },
-  quarterfinal: { bar: 'bg-brand-500',   tint: 'bg-brand-50/50 dark:bg-brand-500/[0.06]', label: 'Cuartos'     },
-  eliminated:   { bar: 'bg-transparent', tint: '',                                        label: 'Eliminada'   },
+  semifinal:    { bar: 'bg-sand-600 dark:bg-sand-400',  tint: 'bg-sand-50/60 dark:bg-sand-400/[0.07]',   label: 'Semifinales' },
+  quarterfinal: { bar: 'bg-brand-500',                  tint: 'bg-brand-50/50 dark:bg-brand-500/[0.06]', label: 'Cuartos'     },
+  eliminated:   { bar: 'bg-transparent',                tint: '',                                        label: 'Eliminada'   },
 }
 
 export default async function GruposPage({ searchParams }) {
@@ -190,7 +195,7 @@ function Legend({ rules }) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 px-1">
       {rules.directToSemis > 0 && (
-        <LegendItem bar="bg-sand-400" label="Clasifica directamente a semifinales" />
+        <LegendItem bar="bg-sand-600 dark:bg-sand-400" label="Clasifica directamente a semifinales" />
       )}
       <LegendItem bar="bg-brand-500" label="Clasifica a cuartos de final" />
       <LegendItem bar="bg-ink-300 dark:bg-ink-700" label="Eliminada" />
