@@ -74,7 +74,7 @@ export default function FormatExplainer() {
       <Stage
         step="3"
         title="Equipos"
-        note="Solo desde semifinales · 4 partidos por eliminatoria"
+        note="Sorteo aleatorio · solo desde semifinales"
         accent
       >
         <div className="space-y-1.5">
@@ -99,9 +99,9 @@ export default function FormatExplainer() {
         </div>
         <Footnote>
           Un equipo no es una pareja de la fase de grupos: nace al llegar a
-          semifinales y lo forman cuatro parejas, una de cada división. Las
-          cuatro supervivientes de cada división se ordenan y se agrupan por
-          rango — la mejor de cada una forma el Equipo 1, y así sucesivamente.
+          semifinales y lo forman cuatro parejas, una de cada división. Al
+          acabar los cuartos, las dieciséis parejas supervivientes se reparten{' '}
+          <span className="font-medium text-fg">al azar</span> en cuatro equipos.
         </Footnote>
       </Stage>
     </div>

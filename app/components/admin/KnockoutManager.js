@@ -4,6 +4,7 @@ import {
   LEVELS, CATEGORY_META, CATEGORY_COLOR, CATEGORY_RULES, ROUNDS,
 } from '@/lib/tournament'
 import { useAdminApi, Flash } from './useAdminApi'
+import TeamBuilder from './TeamBuilder'
 import Badge from '../ui/Badge'
 import { cn } from '@/lib/cn'
 
@@ -11,12 +12,13 @@ import { cn } from '@/lib/cn'
  * Drives the knockout stage in the order it actually happens:
  *
  *   1. draw each division's quarterfinals from its finished group table
- *   2. once every quarterfinal is played, form the squads and seed the semis
+ *   2. once every quarterfinal is played, the organisers draw the four teams
+ *      by hand — the site never generates them — which seeds the semifinals
  *   3. once both semifinals are settled, set up the final
  *
  * Every step is safe to repeat — nothing already played is overwritten.
  */
-export default function KnockoutManager({ divisions, squads, bracket }) {
+export default function KnockoutManager({ divisions, squads, bracket, survivors }) {
   const { send, busy, flash, setFlash } = useAdminApi()
 
   const semis = bracket.filter(b => b.round === 'semifinal')
@@ -86,64 +88,45 @@ export default function KnockoutManager({ divisions, squads, bracket }) {
         </div>
       </Step>
 
-      {/* ── Step 2: form the squads ── */}
+      {/* ── Step 2: the organisers draw the teams by hand ── */}
       <Step
         n="2"
-        title="Formar los equipos"
-        note="Las cuatro supervivientes de cada división se ordenan y se agrupan por rango."
+        title="Sortear los equipos"
+        note="Cuatro equipos de cuatro parejas, una por división. El sorteo lo hacéis vosotros."
         done={squadsFormed}
       >
-        <div className="rounded-xl border border-hairline bg-surface p-4">
-          <div className="mb-3 grid gap-1.5 sm:grid-cols-2">
-            {LEVELS.map(level => {
-              const d = divisions[level]
-              const ok = d.quartersPlayed === CATEGORY_RULES[level].quarterfinals
-              return (
-                <div key={level} className="flex items-center gap-2 text-[12px]">
-                  <span className={cn('h-1.5 w-1.5 rounded-full', ok ? 'bg-accent' : 'bg-hairline-strong')} />
-                  <span className="text-fg-muted">{CATEGORY_META[level].name}</span>
-                  <span className={cn('tabular ml-auto font-mono text-[11px]', ok ? 'text-accent' : 'text-fg-subtle')}>
-                    {d.survivors}/4 vivas
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          <button
-            onClick={() => send('/api/bracket/form-squads', { key: 'squads' })}
-            disabled={!allQuartersDone || busy === 'squads'}
-            title={allQuartersDone ? undefined : 'Faltan cuartos por jugar'}
-            className="h-9 rounded-lg bg-accent px-4 text-xs font-medium text-accent-fg transition-all hover:brightness-110 disabled:opacity-40"
-          >
-            {busy === 'squads'
-              ? 'Formando…'
-              : squadsFormed ? 'Rehacer equipos y semifinales' : 'Formar equipos y sortear semifinales'}
-          </button>
-
-          {squadsFormed && (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {squads.map(squad => (
-                <div key={squad.id} className="rounded-lg border border-hairline bg-surface-2/50 p-3">
-                  <p className="mb-1.5 font-display text-base text-fg">{squad.name}</p>
-                  <ul className="space-y-0.5">
-                    {LEVELS.map(level => (
-                      <li key={level} className="flex items-center gap-1.5">
-                        <span className={cn('h-1 w-1 shrink-0 rounded-full', CATEGORY_COLOR[level].dot)} />
-                        <span className="w-4 shrink-0 font-display text-[10px] text-fg-subtle">
-                          {CATEGORY_META[level].short}
-                        </span>
-                        <span className="truncate text-[11px] text-fg-muted">
-                          {squad.membersByCategory?.[level]?.name ?? '—'}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="mb-3 grid gap-1.5 rounded-xl border border-hairline bg-surface p-4 sm:grid-cols-2">
+          {LEVELS.map(level => {
+            const d  = divisions[level]
+            const ok = d.quartersPlayed === CATEGORY_RULES[level].quarterfinals
+            return (
+              <div key={level} className="flex items-center gap-2 text-[12px]">
+                <span className={cn('h-1.5 w-1.5 rounded-full', ok ? 'bg-accent' : 'bg-hairline-strong')} />
+                <span className="text-fg-muted">{CATEGORY_META[level].name}</span>
+                <span className={cn('tabular ml-auto font-mono text-[11px]', ok ? 'text-accent' : 'text-fg-subtle')}>
+                  {d.survivors}/4 vivas
+                </span>
+              </div>
+            )
+          })}
         </div>
+
+        {allQuartersDone ? (
+          <TeamBuilder
+            survivors={survivors}
+            squads={squads}
+            busy={busy}
+            onSave={teams => send('/api/bracket/teams', { body: { teams }, key: 'teams' })}
+            onClear={() => {
+              if (!confirm('¿Deshacer el sorteo de equipos? Se borrarán las semifinales sin jugar.')) return
+              send('/api/bracket/teams', { method: 'DELETE', key: 'clear-teams' })
+            }}
+          />
+        ) : (
+          <p className="rounded-xl border border-dashed border-hairline-strong bg-surface-2/40 px-4 py-6 text-center text-[12.5px] text-fg-subtle">
+            El sorteo se abre cuando estén jugados los cuartos de las cuatro divisiones.
+          </p>
+        )}
       </Step>
 
       {/* ── Step 3: the final ── */}

@@ -6,6 +6,7 @@ import {
   QUARTERFINAL_SEEDING, division3Quarterfinals,
 } from '@/lib/tournament'
 import { calculateCategoryStandings, calculateGroupedStandings } from '@/lib/standings'
+import { quarterfinalSlot, slotToISO } from '@/lib/tournament-data'
 
 /**
  * Draws one division's quarterfinals from its finished group table.
@@ -103,14 +104,21 @@ export async function POST(request) {
     .eq('stage', 'quarterfinal').eq('level', lvl).eq('completed', false)
 
   const rows = pairings
-    .map(([a, b], i) => ({
-      level:     lvl,
-      stage:     'quarterfinal',
-      slot:      i + 1,
-      team1_id:  a.team_id,
-      team2_id:  b.team_id,
-      completed: false,
-    }))
+    .map(([a, b], i) => {
+      // Kick-off time and court come from the published quarterfinal sheet,
+      // keyed by the slot the draw assigns.
+      const when = quarterfinalSlot(lvl, i + 1)
+      return {
+        level:        lvl,
+        stage:        'quarterfinal',
+        slot:         i + 1,
+        team1_id:     a.team_id,
+        team2_id:     b.team_id,
+        scheduled_at: when ? slotToISO(when.day, when.time) : null,
+        court:        when?.court ?? null,
+        completed:    false,
+      }
+    })
     .filter(r => !lockedSlots.has(r.slot))
 
   if (rows.length > 0) {

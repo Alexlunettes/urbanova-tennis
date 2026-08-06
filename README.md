@@ -34,12 +34,13 @@ best group winners draw the qualifying third-placed pairs, the remaining
 winner draws the weakest runner-up, and the other two runners-up meet. Every
 division ends with **four surviving pairs**.
 
-**Equipos — formed after the quarterfinals, not before.** An *equipo* is not a
-group-stage pair: it comes into existence only at the semifinals and is made
-up of four pairs, one per division. The four survivors of each division are
-ranked on their group-stage record (for division 3, compared across its
-groups) and grouped by rank — the best remaining pair of every division becomes
-Equipo 1, the second-best of each Equipo 2, and so on.
+**Equipos — drawn by hand after the quarterfinals.** An *equipo* is not a
+group-stage pair: it comes into existence only at the semifinals and is made up
+of four pairs, one per division. Once every quarterfinal is played, the sixteen
+survivors are drawn at random into four teams **by the organisers**, in the
+admin panel. The site never generates or randomises them in code — players have
+real availability constraints that only the organisers know about, so the draw
+happens offline and is recorded here.
 
 **Semifinals and final.** Equipo versus equipo over four matches, one per
 division. The equipo winning the majority advances; 2–2 is broken by total
@@ -69,6 +70,8 @@ SQL editor (Dashboard → SQL Editor → New query):
 3. `0003_knockout_by_pairs.sql` — moves the quarterfinals back to individual
    pairs. Adds `matches.slot`, narrows squad ties to semifinals and the final,
    and drops the obsolete `is_reduced` column.
+4. `0004_analytics.sql` — the anonymous page-view log behind the admin
+   analytics tab. No IPs, no cookies, no cross-day identifier.
 
 Then import the roster and fixtures:
 
@@ -133,6 +136,8 @@ lib/
   standings.js          League tables, incl. the four-match exception
   squads.js             Survivors, squad formation, tie resolution
   auth.js               Signed admin sessions
+  analytics.js          UA/referrer parsing + daily visitor hashing
+  analytics-queries.js  Aggregations for the admin dashboard
   pair-stats.js         Per-pair tournament statistics
   awards.js             Award definitions and winners
   sponsors.js           Sponsor roster
@@ -174,3 +179,20 @@ Vercel, from `main`. Set `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`
 and (recommended) `ADMIN_SESSION_SECRET` in the project's environment
 variables.
+
+## Analytics
+
+Two layers, both cookieless and neither needing a consent banner:
+
+- **Vercel Analytics + Speed Insights** (`app/layout.js`) — audience and Core
+  Web Vitals, viewed in the Vercel dashboard. Enable Analytics for the project
+  in Vercel or the calls are simply no-ops.
+- **First-party page views** — logged to Supabase and shown in the *Analítica*
+  tab of `/admin`: views and unique visitors, a daily trend, top pages,
+  devices, browsers, OS, countries, referrers and peak hour.
+
+No IP address or cookie is stored. The visitor identifier is a salted SHA-256
+of (IP + user agent + today's date) truncated to 32 chars, so it cannot be
+reversed and changes at midnight — "unique visitors" therefore means unique
+*per day*, and nobody can be followed across days. `/admin` and `/api` are not
+tracked, and common bot user agents are dropped.

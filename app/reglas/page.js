@@ -23,15 +23,15 @@ const RULES = [
   },
   {
     title: 'Cuartos de final — todavía por parejas',
-    body: 'En cuartos siguen compitiendo las parejas por su cuenta, división por división. En la 1ª y la 2ª división el primero de grupo pasa directo a semifinales y el resto se cruza 2º-7º, 3º-6º y 4º-5º. En la 3ª y la 4ª se clasifican ocho parejas y se disputan cuatro cruces. Cada división llega al final de los cuartos con cuatro parejas vivas.',
+    body: 'En cuartos siguen compitiendo las parejas por su cuenta, división por división. En la 1ª y la 2ª división el primero de grupo pasa directo a semifinales y el resto se cruza 2º-7º, 3º-6º y 4º-5º. En la 4ª se cruzan 1º-8º, 2º-7º, 3º-6º y 4º-5º. En la 3ª, que juega en tres grupos, los cruces se sortean comparando entre grupos a los primeros, a los segundos y a los terceros. Cada división llega al final de los cuartos con cuatro parejas vivas.',
   },
   {
     title: 'Clasificación de la 3ª división',
     body: 'Pasan los dos primeros de cada grupo más los dos mejores terceros. En el sorteo de cuartos, los dos mejores primeros de grupo se enfrentan a los dos terceros clasificados; el primero de grupo restante juega contra el peor segundo; y los otros dos segundos se enfrentan entre sí.',
   },
   {
-    title: 'Los equipos se forman después de los cuartos',
-    body: 'Un equipo no es una pareja de la fase de grupos: solo existe a partir de semifinales y lo componen cuatro parejas, una de cada división. Cuando terminan los cuartos, las cuatro parejas supervivientes de cada división se ordenan por su clasificación y se agrupan por rango: la mejor de cada división forma el Equipo 1, la segunda de cada división el Equipo 2, y así hasta el cuarto. En la 1ª, 2ª y 4ª división ese orden sale de la clasificación general; en la 3ª se compara entre grupos por partidos ganados y por juegos.',
+    title: 'Los equipos se sortean después de los cuartos',
+    body: 'Un equipo no es una pareja de la fase de grupos: solo existe a partir de semifinales y lo componen cuatro parejas, una de cada división. Cuando terminan los cuartos, las dieciséis parejas supervivientes se reparten al azar en cuatro equipos. El sorteo lo realiza la organización.',
   },
   {
     title: 'Semifinales y final',

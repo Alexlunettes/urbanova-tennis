@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { calculateCategoryStandings, calculateGroupedStandings } from '@/lib/standings'
 import { buildBracket, survivorsForDivision } from '@/lib/squads'
 import { LEVELS, CATEGORY_RULES } from '@/lib/tournament'
+import { getAnalytics } from '@/lib/analytics-queries'
 import AdminShell from '@/app/components/admin/AdminShell'
 import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
 import Badge from '@/app/components/ui/Badge'
@@ -56,8 +57,10 @@ export default async function AdminPage() {
     all.filter(m => m.squad_encounter_id),
   )
 
-  // Per-division progress, which is what drives the knockout controls.
+  // Per-division progress, which is what drives the knockout controls, plus
+  // the surviving pairs the organisers pick from when drawing the teams.
   const divisions = {}
+  const survivors = {}
   for (const level of LEVELS) {
     const rules      = CATEGORY_RULES[level]
     const divTeams   = (teams ?? []).filter(t => t.level === level)
@@ -84,7 +87,9 @@ export default async function AdminPage() {
     }
 
     const groupsPlayed = groupGames.filter(m => m.completed).length
-    const survivors    = survivorsForDivision(level, quarters, standings)
+    const alive        = survivorsForDivision(level, quarters, standings)
+
+    survivors[level] = alive.survivors.map(s => ({ id: s.team_id, name: s.team_name }))
 
     divisions[level] = {
       groupsPlayed,
@@ -92,7 +97,7 @@ export default async function AdminPage() {
       groupsDone:    groupGames.length > 0 && groupsPlayed === groupGames.length,
       quartersDrawn: quarters.length > 0,
       quartersPlayed: quarters.filter(m => m.completed).length,
-      survivors:     survivors.survivors.length,
+      survivors:     alive.survivors.length,
     }
   }
 
@@ -102,6 +107,7 @@ export default async function AdminPage() {
     resolvedTies: bracket.filter(b => b.resolution.isComplete).length,
   }
 
+  const analytics      = await getAnalytics(30)
   const needsMigration = encounters === null
 
   return (
@@ -128,9 +134,11 @@ export default async function AdminPage() {
       <AdminShell
         matches={all}
         divisions={divisions}
+        survivors={survivors}
         squads={squadList}
         bracket={bracket}
         counts={counts}
+        analytics={analytics}
       />
     </PageShell>
   )

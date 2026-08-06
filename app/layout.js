@@ -1,6 +1,9 @@
 import { Bebas_Neue, Geist, Geist_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import AnalyticsTracker from './components/AnalyticsTracker'
 import './globals.css'
 
 /* Bebas carries the tournament identity on display type; Geist handles all
@@ -78,6 +81,13 @@ export default function RootLayout({ children }) {
         <Navbar />
         <div id="contenido">{children}</div>
         <Footer />
+
+        {/* Audience and performance data. Vercel's are cookieless; the
+            first-party tracker logs anonymous page views for the /admin
+            dashboard. Neither requires a consent banner. */}
+        <AnalyticsTracker />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

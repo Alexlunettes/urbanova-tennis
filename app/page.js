@@ -148,7 +148,7 @@ export default async function Home() {
           <SectionHeading
             eyebrow="El formato"
             title="CÓMO FUNCIONA EL TORNEO"
-            description="Tres etapas. Se compite por parejas hasta los cuartos; los equipos — cuatro parejas, una por división — solo existen a partir de semifinales."
+            description="Tres etapas. Se compite por parejas hasta los cuartos; después se sortean equipos de cuatro parejas, una por división, que disputan semifinales y final."
           />
           <div className="mt-10">
             <FormatExplainer />

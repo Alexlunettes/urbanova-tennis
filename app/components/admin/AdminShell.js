@@ -3,17 +3,19 @@
 import { useState } from 'react'
 import ScoreEntry from './ScoreEntry'
 import KnockoutManager from './KnockoutManager'
+import AnalyticsPanel from './AnalyticsPanel'
 import { cn } from '@/lib/cn'
 
 const TABS = [
-  { key: 'scores',   label: 'Resultados' },
-  { key: 'knockout', label: 'Eliminatorias' },
+  { key: 'scores',    label: 'Resultados' },
+  { key: 'knockout',  label: 'Eliminatorias' },
+  { key: 'analytics', label: 'Analítica' },
 ]
 
-export default function AdminShell({ matches, divisions, squads, bracket, counts }) {
+export default function AdminShell({ matches, divisions, survivors, squads, bracket, counts, analytics }) {
   const [tab, setTab] = useState('scores')
 
-  const badge = { scores: counts.pending, knockout: counts.resolvedTies }
+  const badge = { scores: counts.pending, knockout: counts.resolvedTies, analytics: 0 }
 
   return (
     <div>
@@ -53,8 +55,14 @@ export default function AdminShell({ matches, divisions, squads, bracket, counts
       </div>
 
       {tab === 'scores'   && <ScoreEntry matches={matches} />}
+      {tab === 'analytics' && <AnalyticsPanel data={analytics} />}
       {tab === 'knockout' && (
-        <KnockoutManager divisions={divisions} squads={squads} bracket={bracket} />
+        <KnockoutManager
+          divisions={divisions}
+          survivors={survivors}
+          squads={squads}
+          bracket={bracket}
+        />
       )}
     </div>
   )

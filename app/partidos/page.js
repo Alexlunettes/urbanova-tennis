@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { CATEGORY_META, CATEGORY_COLOR, LEVELS, ROUNDS, formatFor } from '@/lib/tournament'
+import { CATEGORY_META, CATEGORY_COLOR, LEVELS, ROUNDS, formatFor, courtLabel } from '@/lib/tournament'
 import { buildBracket } from '@/lib/squads'
 import RealtimeRefresher from '@/app/components/RealtimeRefresher'
 import Bracket from '@/app/components/Bracket'
@@ -310,7 +310,9 @@ function MatchRow({ match, showDivision }) {
             {time ?? 'Por fijar'}
           </span>
         )}
-        {match.court && <span className="text-[10px] text-fg-subtle">Pista {match.court}</span>}
+        {match.court && (
+          <span className="text-[10px] text-fg-subtle">{courtLabel(match.court)}</span>
+        )}
       </div>
 
       <TeamName name={match.team2?.name} won={t2Won} dimmed={match.completed && !t2Won} align="right" />
@@ -344,7 +346,7 @@ function TeamName({ name, won, dimmed, align = 'left' }) {
 function KnockoutView({ quarterfinalsByDivision, bracket, squads }) {
   const semifinals = bracket.filter(b => b.round === 'semifinal')
   const final      = bracket.find(b => b.round === 'final')
-  const anyMatches = Object.values(quarterfinalsByDivision).some(v => v.length > 0)
+  const drawn      = Object.values(quarterfinalsByDivision).some(v => v.length > 0)
 
   return (
     <>
@@ -355,28 +357,30 @@ function KnockoutView({ quarterfinalsByDivision, bracket, squads }) {
             Cuartos por parejas · semifinales y final por equipos
           </p>
         </div>
-        <Badge tone="neutral" size="md" className="ml-auto">
-          {ROUNDS.quarterfinal.label} → {ROUNDS.final.label}
+        <Badge tone={drawn ? 'accent' : 'neutral'} size="md" className="ml-auto">
+          {drawn ? 'Cruces sorteados' : 'Cruces provisionales'}
         </Badge>
       </div>
 
-      {!anyMatches && squads.length === 0 ? (
-        <EmptyState
-          className="mt-8"
-          icon={<TrophyIcon />}
-          title="El cuadro aún no está formado"
-          description="Los cuartos se sortean cuando terminan los grupos. Los equipos se forman después, con las parejas que sobrevivan."
-        />
-      ) : (
-        <div className="mt-8">
-          <Bracket
-            quarterfinalsByDivision={quarterfinalsByDivision}
-            semifinals={semifinals}
-            final={final}
-            squads={squads}
-          />
-        </div>
+      {/* The bracket is legible from day one: until the group stage ends each
+          slot shows the finishing positions that will contest it. */}
+      {!drawn && (
+        <p className="mt-4 rounded-xl border border-hairline bg-surface-2/50 px-4 py-3 text-[12.5px] leading-relaxed text-fg-muted">
+          Los cruces todavía no están sorteados. Mientras tanto, el cuadro
+          muestra <span className="font-medium text-fg">qué puestos se
+          enfrentarán</span> en cada división, con su hora y pista, para que
+          puedas seguir el camino que tendría tu pareja.
+        </p>
       )}
+
+      <div className="mt-8">
+        <Bracket
+          quarterfinalsByDivision={quarterfinalsByDivision}
+          semifinals={semifinals}
+          final={final}
+          squads={squads}
+        />
+      </div>
     </>
   )
 }
@@ -386,15 +390,6 @@ function CalendarIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
       <rect x="3" y="5" width="18" height="16" rx="2.5" />
       <path d="M3 10h18M8 3v4M16 3v4" />
-    </svg>
-  )
-}
-
-function TrophyIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
-      <path d="M7 6H4.5a2.5 2.5 0 0 0 2.5 4M17 6h2.5a2.5 2.5 0 0 1-2.5 4M9 20h6M12 14v6" />
     </svg>
   )
 }
