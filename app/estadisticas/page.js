@@ -45,7 +45,9 @@ export default async function EstadisticasPage({ searchParams }) {
         </div>
         {played.length > 0 && (
           <Badge tone="accent" size="md" className="ml-auto">
-            {played.reduce((s, r) => s + r.MP, 0)} partidos contabilizados
+            {/* Each match contributes an MP to both of its pairs, so halve the
+                sum to get the number of matches actually played. */}
+            {played.reduce((s, r) => s + r.MP, 0) / 2} partidos contabilizados
           </Badge>
         )}
       </div>

@@ -52,9 +52,20 @@ export default function ScoreEntry({ matches }) {
     )
   }
 
+  /**
+   * @param {number} i    which set
+   * @param {1|2}    side which pair
+   *
+   * The state key is derived here and nowhere else. An earlier version let the
+   * caller pass the key as a string, and `SetRow` passed 'team1' instead of
+   * 'team1_score' — so every keystroke wrote to a field nothing read, the
+   * controlled input re-rendered empty, and the boxes silently refused input
+   * with no error anywhere. Taking a side number makes that impossible.
+   */
   function update(i, side, raw) {
+    const key = side === 2 ? 'team2_score' : 'team1_score'
     setSets(prev => prev.map((s, idx) =>
-      idx === i ? { ...s, [side]: raw === '' ? '' : Number(raw) } : s,
+      idx === i ? { ...s, [key]: raw === '' ? '' : Number(raw) } : s,
     ))
   }
 
@@ -233,7 +244,7 @@ function SetRow({ label, value, onChange, accent = false, max = 7 }) {
       <input
         type="number" min="0" max={max} inputMode="numeric"
         value={value.team1_score}
-        onChange={e => onChange('team1', e.target.value)}
+        onChange={e => onChange(1, e.target.value)}
         placeholder="0"
         aria-label={`${label} — local`}
         className={input}
@@ -244,7 +255,7 @@ function SetRow({ label, value, onChange, accent = false, max = 7 }) {
       <input
         type="number" min="0" max={max} inputMode="numeric"
         value={value.team2_score}
-        onChange={e => onChange('team2', e.target.value)}
+        onChange={e => onChange(2, e.target.value)}
         placeholder="0"
         aria-label={`${label} — visitante`}
         className={input}
