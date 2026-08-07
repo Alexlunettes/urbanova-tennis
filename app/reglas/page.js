@@ -19,7 +19,7 @@ const RULES = [
   },
   {
     title: 'Las parejas con cuatro partidos',
-    body: 'Rocío y Carla en la 1ª división, y Héctor y Alexander en la 2ª, juegan un partido más que el resto. Para no salir beneficiadas ni perjudicadas, de sus cuatro resultados solo cuentan tres: sus dos mejores y el peor. El tercer mejor resultado se descarta.',
+    body: 'Rocío Navarro y Carla Verdú en la 1ª división, y Héctor Roig y Alexander Dubois en la 2ª, juegan un partido más que el resto. Para no salir beneficiadas ni perjudicadas, de sus cuatro resultados solo cuentan tres: sus dos mejores y el peor. El tercer mejor resultado se descarta.',
   },
   {
     title: 'Cuartos de final — todavía por parejas',

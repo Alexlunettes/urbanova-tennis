@@ -22,7 +22,7 @@ is matches won, then games won and lost.
 | 3        | 12    | 3      | —            | 8                | 4                 |
 | 4        | 14    | 1      | —            | 8                | 4                 |
 
-Two pairs play a fourth group match — Rocío / Carla in division 1 and Héctor /
+Two pairs play a fourth group match — Rocío Navarro / Carla in division 1 and Héctor /
 Alexander in division 2. For them only three results count: **their best two
 and their worst**, so the third-best is dropped. (`countedResults` in
 `lib/standings.js`.)
