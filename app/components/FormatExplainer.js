@@ -74,7 +74,7 @@ export default function FormatExplainer() {
       <Stage
         step="3"
         title="Equipos"
-        note="Sorteo aleatorio · solo desde semifinales"
+        note="Según los cuartos · solo desde semifinales"
         accent
       >
         <div className="space-y-1.5">
@@ -83,8 +83,12 @@ export default function FormatExplainer() {
               key={seed}
               className="flex items-center gap-2.5 rounded-lg border border-hairline bg-surface px-2.5 py-2"
             >
-              <span className="tabular w-3 shrink-0 font-mono text-[10px] text-fg-subtle">{seed}</span>
-              <span className="min-w-0 flex-1 truncate text-[12px] text-fg">Equipo {seed}</span>
+              <span className="tabular w-3 shrink-0 font-mono text-[10px] text-fg-subtle">
+                {'ABCD'[seed - 1]}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[12px] text-fg">
+                Equipo {'ABCD'[seed - 1]}
+              </span>
               <span className="flex shrink-0 gap-0.5">
                 {LEVELS.map(l => (
                   <span
@@ -100,8 +104,9 @@ export default function FormatExplainer() {
         <Footnote>
           Un equipo no es una pareja de la fase de grupos: nace al llegar a
           semifinales y lo forman cuatro parejas, una de cada división. Al
-          acabar los cuartos, las dieciséis parejas supervivientes se reparten{' '}
-          <span className="font-medium text-fg">al azar</span> en cuatro equipos.
+          acabar los cuartos, cada división ordena a sus supervivientes{' '}
+          <span className="font-medium text-fg">por diferencia de sets y de juegos</span>,
+          y los cuatro equipos salen de esa clasificación.
         </Footnote>
       </Stage>
     </div>
@@ -168,11 +173,12 @@ export function SquadKeyPoint({ className }) {
       </svg>
       <p className="text-[13px] leading-relaxed text-fg-muted">
         <span className="font-medium text-fg">
-          Desde semifinales puedes perder tu partido y seguir en el torneo.
+          Desde semifinales puedes perder tu partido y seguir en el torneo — y
+          ganarlo y quedarte fuera.
         </span>{' '}
         Cada eliminatoria son cuatro partidos, uno por división, y pasa el
-        equipo que gane la mayoría. Si acaba 2–2 deciden los sets y, después,
-        los juegos.
+        equipo que gane la mayoría, no las parejas ganadoras. Si acaba 2–2
+        deciden los sets y, después, los juegos.
       </p>
     </div>
   )

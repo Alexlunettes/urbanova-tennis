@@ -3,6 +3,7 @@ import {
   quarterfinalSeedLabels, courtLabel,
 } from '@/lib/tournament'
 import { quarterfinalSlot } from '@/lib/tournament-data'
+import { TEAM_COMPOSITION, SEMIFINAL_SEEDING } from '@/lib/squads'
 import Badge from './ui/Badge'
 import { cn } from '@/lib/cn'
 
@@ -50,22 +51,22 @@ export default function Bracket({ quarterfinalsByDivision, semifinals, final, sq
 
         <Connector />
 
-        {/* ── The draw ── */}
-        <section className="w-64 shrink-0 self-start">
-          <ColumnHeading title="Sorteo de equipos" note="Al acabar los cuartos" />
-          <DrawNode squads={squads} />
+        {/* ── How the teams come out of the quarterfinals ── */}
+        <section className="w-68 shrink-0 self-start">
+          <ColumnHeading title="Formación de equipos" note="Se calcula con los cuartos" />
+          <CompositionNode squads={squads} />
         </section>
 
         <Connector />
 
         {/* ── Column 2: semifinals ── */}
         <section className="w-80 shrink-0 self-center sm:w-88">
-          <ColumnHeading title="Semifinales" note="Equipo vs equipo · 4 partidos" />
+          <ColumnHeading title="Semifinales" note="A vs D y B vs C · domingo por la mañana" />
           <div className="space-y-5">
             {semifinals.length > 0 && teamsFormed
               ? semifinals.map(tie => <TeamNode key={tie.id} tie={tie} />)
-              : [1, 2].map(i => (
-                  <TeamNode key={i} placeholder label={`Semifinal ${i}`} />
+              : SEMIFINAL_SEEDING.map(([a, b], i) => (
+                  <TeamNode key={i} placeholder label={`Semifinal ${i + 1}`} seeds={[a, b]} />
                 ))}
           </div>
         </section>
@@ -74,7 +75,7 @@ export default function Bracket({ quarterfinalsByDivision, semifinals, final, sq
 
         {/* ── Column 3: final ── */}
         <section className="w-80 shrink-0 self-center sm:w-88">
-          <ColumnHeading title="Final" note="El título" />
+          <ColumnHeading title="Final" note="Las 4 parejas del equipo ganador · domingo tarde" />
           {final && teamsFormed
             ? <TeamNode tie={final} isFinal />
             : <TeamNode placeholder label="Final" isFinal />}
@@ -229,92 +230,104 @@ function SeedLegend() {
   )
 }
 
-/* ──────────────────────────── THE DRAW ──────────────────────────── */
+/* ─────────────────────── HOW THE TEAMS ARE BUILT ─────────────────────── */
 
 /**
  * The hinge of the whole bracket: individual pairs go in, teams come out.
- * Before the draw this states plainly that the teams are drawn at random by
- * the organisers; afterwards it lists them.
+ *
+ * Nothing is drawn by hand and nothing is random. Each division ranks its four
+ * survivors on how convincingly they won their quarterfinal, and the fixed
+ * matrix below turns those sixteen pairs into four teams. Before the
+ * quarterfinals are done this explains the rule; afterwards it lists the teams
+ * it produced.
  */
-function DrawNode({ squads = [] }) {
-  const drawn = squads.length > 0
+function CompositionNode({ squads = [] }) {
+  const formed = squads.length > 0
+  const bySeed = Object.fromEntries(squads.map(s => [s.seed, s]))
 
   return (
     <div
       className={cn(
         'rounded-2xl border p-4',
-        drawn
+        formed
           ? 'border-hairline bg-surface shadow-xs'
           : 'border-dashed border-accent/35 bg-accent-soft/50',
       )}
     >
-      {!drawn && (
-        <div className="mb-3 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/12 text-accent">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="3.5" />
-              <circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" />
-              <circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" />
-              <circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" />
-              <circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" />
-            </svg>
-          </span>
-          <p className="font-display text-base text-fg">SORTEO ALEATORIO</p>
-        </div>
-      )}
-
       <p className="text-[12px] leading-relaxed text-fg-muted">
-        {drawn ? (
-          <>Estos son los cuatro equipos que disputan las semifinales. Cada uno
-          reúne una pareja de cada división.</>
+        {formed ? (
+          <>Estos son los cuatro equipos que disputan las semifinales, formados
+          con los resultados de los cuartos. Cada uno reúne una pareja de cada
+          división.</>
         ) : (
-          <>Al terminar los cuartos, las <span className="font-medium text-fg">16
-          parejas supervivientes</span> se reparten <span className="font-medium text-fg">al
-          azar</span> en cuatro equipos, uno por cada plaza de semifinales. Cada
-          equipo lo forman cuatro parejas, una de cada división.</>
+          <>Al terminar los cuartos, cada división ordena a sus{' '}
+          <span className="font-medium text-fg">cuatro supervivientes</span> por
+          diferencia de sets y, si empatan, por diferencia de juegos. Los cuatro
+          equipos salen de esa clasificación con este reparto fijo:</>
         )}
       </p>
 
       <div className="mt-3.5 space-y-1.5">
-        {(drawn ? squads : [1, 2, 3, 4].map(seed => ({ id: seed, seed, name: `Equipo ${seed}` })))
-          .map(squad => (
+        {TEAM_COMPOSITION.map(spec => {
+          const squad = bySeed[spec.seed]
+          return (
             <div
-              key={squad.id ?? squad.seed}
+              key={spec.key}
               className={cn(
                 'rounded-lg border px-2.5 py-1.5',
-                drawn ? 'border-hairline bg-surface-2/50' : 'border-dashed border-hairline-strong',
+                formed ? 'border-hairline bg-surface-2/50' : 'border-dashed border-hairline-strong',
               )}
             >
               <div className="flex items-center gap-2">
-                <span className="tabular font-mono text-[10px] text-fg-subtle">{squad.seed ?? '—'}</span>
-                <span className={cn('truncate text-[12px]', drawn ? 'text-fg' : 'italic text-fg-subtle')}>
-                  {squad.name}
+                <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded bg-accent-soft font-display text-[10px] text-accent">
+                  {spec.key}
                 </span>
-                <span className="ml-auto flex gap-0.5">
-                  {LEVELS.map(l => (
-                    <span
-                      key={l}
-                      className={cn(
-                        'h-1.5 w-1.5 rounded-full',
-                        drawn && squad.membersByCategory?.[l]
-                          ? CATEGORY_COLOR[l].dot
-                          : 'bg-hairline-strong',
-                      )}
-                      title={CATEGORY_META[l].name}
-                    />
-                  ))}
+                <span className={cn('truncate text-[12px]', formed ? 'text-fg' : 'text-fg-muted')}>
+                  {squad?.name ?? spec.name}
                 </span>
               </div>
+
+              <ul className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 pl-6.5">
+                {LEVELS.map(level => {
+                  const pair = squad?.membersByCategory?.[level]
+                  return (
+                    <li key={level} className="flex items-center gap-1">
+                      <span className={cn('h-1 w-1 shrink-0 rounded-full', CATEGORY_COLOR[level].dot)} />
+                      <span className="font-mono text-[9.5px] text-fg-subtle" title={CATEGORY_META[level].name}>
+                        {CATEGORY_META[level].short}
+                        <span className="text-fg-muted">#{spec.ranks[level]}</span>
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {formed && (
+                <ul className="mt-1 space-y-0.5 pl-6.5">
+                  {LEVELS.map(level => (
+                    <li key={level} className="truncate text-[10.5px] text-fg-muted">
+                      {squad?.membersByCategory?.[level]?.name ?? '—'}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          ))}
+          )
+        })}
       </div>
+
+      <p className="mt-3 text-[10.5px] leading-relaxed text-fg-subtle">
+        <span className="font-mono">#1</span> es la mejor superviviente de esa
+        división. En 1ª y 2ª la pareja que pasó directa a semifinales es la{' '}
+        <span className="font-mono">#1</span> sin jugar los cuartos.
+      </p>
     </div>
   )
 }
 
 /* ─────────────────── SEMIFINALS AND FINAL (TEAMS) ─────────────────── */
 
-function TeamNode({ tie, placeholder = false, label, isFinal = false }) {
+function TeamNode({ tie, placeholder = false, label, isFinal = false, seeds }) {
   if (placeholder) {
     return (
       <article
@@ -323,13 +336,13 @@ function TeamNode({ tie, placeholder = false, label, isFinal = false }) {
           isFinal ? 'border-sand-300/60' : 'border-hairline-strong',
         )}
       >
-        <PlaceholderSide />
+        <PlaceholderSide seeds={seeds?.[0]} />
         <div className="border-y border-hairline bg-surface-2/60 px-4 py-1.5 text-center">
           <span className="text-[10px] font-medium uppercase tracking-wider text-fg-subtle">
             {label}
           </span>
         </div>
-        <PlaceholderSide />
+        <PlaceholderSide seeds={seeds?.[1]} />
       </article>
     )
   }
@@ -384,6 +397,8 @@ function TeamNode({ tie, placeholder = false, label, isFinal = false }) {
         pending={!resolution.isComplete}
       />
 
+      <MatchBreakdown tie={tie} />
+
       {explanation && (
         <p
           className={cn(
@@ -399,11 +414,67 @@ function TeamNode({ tie, placeholder = false, label, isFinal = false }) {
   )
 }
 
+/**
+ * The four matches of a tie, one per division, with their time and score.
+ *
+ * Worth showing in full because the tie is decided on the majority: a pair can
+ * win here and still go out with its team, which is exactly the thing visitors
+ * find surprising.
+ */
+function MatchBreakdown({ tie }) {
+  const { matchesByCategory } = tie
+
+  return (
+    <div className="border-t border-hairline bg-surface-2/30 px-4 py-2">
+      <ul className="space-y-1">
+        {LEVELS.map(level => {
+          const m = matchesByCategory[level]
+          const sets = (m?.sets ?? []).slice().sort((a, b) => a.set_number - b.set_number)
+          const t1Won = m?.completed && m.winner_id === m.team1_id
+          const t2Won = m?.completed && m.winner_id === m.team2_id
+          const when  = m?.scheduled_at
+            ? new Date(m.scheduled_at).toLocaleTimeString('es-ES', {
+                hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid',
+              })
+            : null
+
+          return (
+            <li key={level} className="flex items-center gap-1.5 text-[10.5px]">
+              <span className={cn('h-1 w-1 shrink-0 rounded-full', CATEGORY_COLOR[level].dot)} />
+              <span className="w-4 shrink-0 font-display text-[9.5px] text-fg-subtle">
+                {CATEGORY_META[level].short}
+              </span>
+              <span className={cn('shrink-0', t1Won ? 'font-medium text-fg' : 'text-fg-subtle')}>
+                {t1Won ? '▲' : t2Won ? '▽' : '·'}
+              </span>
+              <span className={cn('shrink-0', t2Won ? 'font-medium text-fg' : 'text-fg-subtle')}>
+                {t2Won ? '▲' : t1Won ? '▽' : '·'}
+              </span>
+              <span className="tabular ml-auto shrink-0 font-mono text-[9.5px] text-fg-subtle">
+                {sets.length > 0
+                  ? sets.map(s => `${s.team1_score}-${s.team2_score}`).join(' ')
+                  : when ? `${when}${m?.court ? ` · ${courtLabel(m.court)}` : ''}` : '—'}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="mt-1.5 text-[9.5px] leading-snug text-fg-subtle/80">
+        Avanza el equipo que gane más partidos, no las parejas ganadoras.
+      </p>
+    </div>
+  )
+}
+
 /** The shape of a team slot before the draw, so the structure is legible early. */
-function PlaceholderSide() {
+function PlaceholderSide({ seeds }) {
+  const spec = seeds ? TEAM_COMPOSITION.find(t => t.seed === seeds) : null
+
   return (
     <div className="px-4 py-3">
-      <p className="font-display text-xl italic text-fg-subtle">Equipo por sortear</p>
+      <p className="font-display text-xl text-fg-subtle">
+        {spec ? spec.name : <span className="italic">Equipo por definir</span>}
+      </p>
       <ul className="mt-2 space-y-0.5">
         {LEVELS.map(level => (
           <li key={level} className="flex items-center gap-1.5">
@@ -412,7 +483,9 @@ function PlaceholderSide() {
               {CATEGORY_META[level].short}
             </span>
             <span className="text-[11px] italic text-fg-subtle/70">
-              1 pareja de {CATEGORY_META[level].short} división
+              {spec
+                ? `nº ${spec.ranks[level]} de ${CATEGORY_META[level].short} división`
+                : `1 pareja de ${CATEGORY_META[level].short} división`}
             </span>
           </li>
         ))}

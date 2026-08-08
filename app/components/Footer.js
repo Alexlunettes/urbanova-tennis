@@ -15,6 +15,7 @@ const SECTIONS = [
   {
     title: 'Más',
     links: [
+      { href: '/1-point-slam', label: '1 Point Slam' },
       { href: '/estadisticas', label: 'Estadísticas' },
       { href: '/galeria',      label: 'Galería'      },
       { href: '/premios',      label: 'Palmarés'     },

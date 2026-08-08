@@ -1,12 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CATEGORY_META, LEVELS } from '@/lib/tournament'
+import { CATEGORY_META, CATEGORY_COLOR, LEVELS } from '@/lib/tournament'
 import { useStoredValue, setStoredValue } from '@/lib/hooks'
 import Badge from './ui/Badge'
 import { cn } from '@/lib/cn'
 
-/** One stable token per browser, so a device can only vote once. */
+/**
+ * The public MVP vote — one MVP per division, so four votes per visitor.
+ *
+ * Each division is voted independently: voting in the 1ª reveals that
+ * division's tally and leaves the other three still open. A browser gets one
+ * vote in each, enforced server-side by a UNIQUE index on (voter_token, level);
+ * localStorage only remembers what this device already did so the UI can show
+ * results instead of buttons.
+ */
+
+const VOTES_KEY  = 'mvp_voted_by_level'
+const LEGACY_KEY = 'mvp_voted_for'      // the old single global vote
+
+/** One stable token per browser. */
 function getVoterToken() {
   let token = localStorage.getItem('mvp_voter_token')
   if (!token) {
@@ -16,48 +29,76 @@ function getVoterToken() {
   return token
 }
 
-export default function MvpVoter({ players }) {
-  const [loading,  setLoading]  = useState(null)   // id being submitted
-  const [error,    setError]    = useState('')
-  const [counts,   setCounts]   = useState({})
-  const [query,    setQuery]    = useState('')
-  const [division, setDivision] = useState('todas')
+function parseVotes(raw) {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
 
-  // The prior vote lives in localStorage, read through an external store so
-  // the server and client agree on first paint without a cascading render.
-  const votedFor = useStoredValue('mvp_voted_for', null)
-  const voted    = votedFor !== null
+export default function MvpVoter({ players }) {
+  const [loading, setLoading] = useState(null)   // player id being submitted
+  const [error,   setError]   = useState('')
+  const [counts,  setCounts]  = useState({})
+  const [byLevel, setByLevel] = useState({})
+  const [query,   setQuery]   = useState('')
+
+  const stored = useStoredValue(VOTES_KEY, null)
+  const legacy = useStoredValue(LEGACY_KEY, null)
+
+  // A vote cast before the split was a vote in that player's division, so it
+  // still counts — carry it across rather than asking the visitor again.
+  const myVotes = parseVotes(stored)
+  if (legacy && !stored) {
+    const player = players.find(p => p.id === legacy)
+    if (player) myVotes[player.level] = legacy
+  }
+
+  const votedCount = LEVELS.filter(l => myVotes[l]).length
 
   useEffect(() => {
     fetch('/api/mvp/counts')
-      .then(res => (res.ok ? res.json() : {}))
-      .then(setCounts)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (!data) return
+        setCounts(data.counts ?? {})
+        setByLevel(data.byLevel ?? {})
+      })
       .catch(() => {})
   }, [])
 
   async function refreshCounts() {
     const res = await fetch('/api/mvp/counts')
-    if (res.ok) setCounts(await res.json())
+    if (!res.ok) return
+    const data = await res.json()
+    setCounts(data.counts ?? {})
+    setByLevel(data.byLevel ?? {})
   }
 
-  async function handleVote(playerId) {
-    setLoading(playerId)
+  async function handleVote(player) {
+    setLoading(player.id)
     setError('')
     try {
       const res = await fetch('/api/mvp/vote', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ player_id: playerId, voter_token: getVoterToken() }),
+        body:    JSON.stringify({ player_id: player.id, voter_token: getVoterToken() }),
       })
       const data = await res.json().catch(() => ({}))
 
       if (data.error === 'already_voted') {
-        setError('Este dispositivo ya había votado.')
+        setError(`Este dispositivo ya había votado en ${CATEGORY_META[player.level].name}.`)
+        setStoredValue(VOTES_KEY, JSON.stringify({ ...myVotes, [player.level]: 'otro' }))
         await refreshCounts()
       } else if (!res.ok) {
-        setError('No se pudo registrar el voto. Inténtalo de nuevo.')
+        setError(data.error && res.status === 503
+          ? data.error
+          : 'No se pudo registrar el voto. Inténtalo de nuevo.')
       } else {
-        setStoredValue('mvp_voted_for', playerId)
+        setStoredValue(VOTES_KEY, JSON.stringify({ ...myVotes, [player.level]: player.id }))
         await refreshCounts()
       }
     } catch {
@@ -67,17 +108,8 @@ export default function MvpVoter({ players }) {
     }
   }
 
-  const totalVotes = Object.values(counts).reduce((s, n) => s + n, 0)
-  const leader     = Math.max(0, ...Object.values(counts))
-
-  const visible = players.filter(p => {
-    if (division !== 'todas' && p.level !== division) return false
-    const q = query.trim().toLowerCase()
-    return !q || p.name.toLowerCase().includes(q) || (p.pair ?? '').toLowerCase().includes(q)
-  })
-  const ordered = voted
-    ? [...visible].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name, 'es'))
-    : visible
+  const q = query.trim().toLowerCase()
+  const matches = p => !q || p.name.toLowerCase().includes(q) || (p.pair ?? '').toLowerCase().includes(q)
 
   return (
     <div>
@@ -85,23 +117,23 @@ export default function MvpVoter({ players }) {
       <div
         className={cn(
           'mb-6 flex flex-wrap items-center gap-3 rounded-2xl border px-5 py-4',
-          voted
+          votedCount === LEVELS.length
             ? 'border-brand-200 bg-accent-soft dark:border-brand-500/25'
             : 'border-sand-200 bg-sand-50/70 dark:border-sand-400/25 dark:bg-sand-400/[0.07]',
         )}
       >
         <p className="text-[13.5px] text-fg-muted">
-          {voted ? (
-            <><span className="font-medium text-fg">¡Gracias por votar!</span> Estos son los resultados en directo.</>
+          {votedCount === LEVELS.length ? (
+            <><span className="font-medium text-fg">¡Gracias por votar!</span> Ya has elegido
+            MVP en las cuatro divisiones. Estos son los resultados en directo.</>
           ) : (
-            <><span className="font-medium text-fg">Vota por quien más te haya impresionado.</span> Un solo voto por dispositivo.</>
+            <><span className="font-medium text-fg">Hay un MVP por división.</span> Vota en cada
+            una por quien más te haya impresionado: un voto por dispositivo y división.</>
           )}
         </p>
-        {voted && (
-          <Badge tone="accent" size="md" className="ml-auto">
-            {totalVotes} {totalVotes === 1 ? 'voto' : 'votos'}
-          </Badge>
-        )}
+        <Badge tone={votedCount > 0 ? 'accent' : 'neutral'} size="md" className="ml-auto">
+          {votedCount}/{LEVELS.length} votadas
+        </Badge>
       </div>
 
       {error && (
@@ -110,26 +142,8 @@ export default function MvpVoter({ players }) {
         </p>
       )}
 
-      {/* ── Division filter ── */}
-      <div className="mb-3 -mx-1 flex flex-wrap gap-1.5 px-1">
-        {['todas', ...LEVELS].map(d => (
-          <button
-            key={d}
-            onClick={() => setDivision(d)}
-            className={cn(
-              'rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all',
-              division === d
-                ? 'border-accent bg-accent-soft text-accent'
-                : 'border-hairline bg-surface text-fg-muted hover:text-fg',
-            )}
-          >
-            {d === 'todas' ? 'Todas' : CATEGORY_META[d].name}
-          </button>
-        ))}
-      </div>
-
       {/* ── Search ── */}
-      <div className="relative mb-6">
+      <div className="relative mb-8">
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle"
@@ -147,17 +161,71 @@ export default function MvpVoter({ players }) {
         />
       </div>
 
-      {ordered.length === 0 ? (
-        <p className="py-12 text-center text-sm text-fg-subtle">
-          Ningún jugador coincide con «{query}».
+      {/* ── One independent vote per division ── */}
+      <div className="space-y-10">
+        {LEVELS.map(level => {
+          const inDivision = players.filter(p => p.level === level)
+          const shown      = inDivision.filter(matches)
+          // Summed from the division's own players rather than taken from the
+          // API, so the percentages are right even before migration 0005 adds
+          // the `level` column that `byLevel` comes from.
+          const total = byLevel[level]
+            ?? inDivision.reduce((sum, p) => sum + (counts[p.id] ?? 0), 0)
+
+          return (
+            <DivisionVote
+              key={level}
+              level={level}
+              players={shown}
+              hidden={inDivision.length > 0 && shown.length === 0}
+              myVote={myVotes[level] ?? null}
+              counts={counts}
+              total={total}
+              loading={loading}
+              onVote={handleVote}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DivisionVote({ level, players, hidden, myVote, counts, total, loading, onVote }) {
+  const voted  = Boolean(myVote)
+  const leader = Math.max(0, ...players.map(p => counts[p.id] ?? 0))
+
+  const ordered = voted
+    ? [...players].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || a.name.localeCompare(b.name, 'es'))
+    : players
+
+  return (
+    <section>
+      <div className="mb-4 flex flex-wrap items-center gap-3 border-b border-hairline pb-3">
+        <span className={cn('h-2.5 w-2.5 rounded-full', CATEGORY_COLOR[level].dot)} />
+        <h3 className="mr-auto font-display text-xl text-fg">
+          MVP · {CATEGORY_META[level].name}
+        </h3>
+        {voted ? (
+          <Badge tone="accent" size="sm">
+            {total} {total === 1 ? 'voto' : 'votos'}
+          </Badge>
+        ) : (
+          <Badge tone="sand" size="sm">Tu voto pendiente</Badge>
+        )}
+      </div>
+
+      {hidden ? (
+        <p className="py-6 text-center text-[13px] text-fg-subtle">
+          Ningún jugador de esta división coincide con la búsqueda.
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ordered.map(player => {
-            const votes      = counts[player.id] ?? 0
-            const pct        = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0
-            const isMine     = votedFor === player.id
-            const isLeader   = voted && votes > 0 && votes === leader
+            const votes    = counts[player.id] ?? 0
+            const pct      = total > 0 ? Math.round((votes / total) * 100) : 0
+            const isMine   = myVote === player.id
+            const isLeader = voted && votes > 0 && votes === leader
 
             return (
               <div
@@ -172,10 +240,9 @@ export default function MvpVoter({ players }) {
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-[13.5px] font-medium text-fg">{player.name}</p>
-                    <p className="mt-0.5 truncate text-[11px] text-fg-subtle">
-                      {CATEGORY_META[player.level]?.short ?? player.level}
-                      {player.pair ? ` · ${player.pair}` : ''}
-                    </p>
+                    {player.pair && (
+                      <p className="mt-0.5 truncate text-[11px] text-fg-subtle">{player.pair}</p>
+                    )}
                   </div>
                   {isMine   && <span title="Tu voto" aria-label="Tu voto">⭐</span>}
                   {!isMine && isLeader && <span title="Más votado" aria-label="Más votado">🏆</span>}
@@ -205,7 +272,7 @@ export default function MvpVoter({ players }) {
                   </div>
                 ) : (
                   <button
-                    onClick={() => handleVote(player.id)}
+                    onClick={() => onVote(player)}
                     disabled={loading !== null}
                     className="h-9 w-full rounded-lg bg-accent text-xs font-medium text-accent-fg transition-all hover:brightness-110 disabled:opacity-40"
                   >
@@ -217,6 +284,6 @@ export default function MvpVoter({ players }) {
           })}
         </div>
       )}
-    </div>
+    </section>
   )
 }

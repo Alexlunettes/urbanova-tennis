@@ -30,12 +30,20 @@ const RULES = [
     body: 'Pasan los dos primeros de cada grupo más los dos mejores terceros. En el sorteo de cuartos, los dos mejores primeros de grupo se enfrentan a los dos terceros clasificados; el primero de grupo restante juega contra el peor segundo; y los otros dos segundos se enfrentan entre sí.',
   },
   {
-    title: 'Los equipos se sortean después de los cuartos',
-    body: 'Un equipo no es una pareja de la fase de grupos: solo existe a partir de semifinales y lo componen cuatro parejas, una de cada división. Cuando terminan los cuartos, las dieciséis parejas supervivientes se reparten al azar en cuatro equipos. El sorteo lo realiza la organización.',
+    title: 'Los equipos salen de los cuartos',
+    body: 'Un equipo no es una pareja de la fase de grupos: solo existe a partir de semifinales y lo componen cuatro parejas, una de cada división. No hay sorteo. Cada división ordena a sus cuatro supervivientes según lo contundente que fuera su victoria en cuartos: primero por diferencia de sets —un 2–0 pasa por delante de un 2–1— y, si hay empate, por diferencia de juegos. En la 1ª y la 2ª división, la pareja que pasó directa a semifinales es la nº 1 sin jugar los cuartos.',
+  },
+  {
+    title: 'Cómo se reparten las parejas en los cuatro equipos',
+    body: 'El reparto es fijo y está pensado para que ningún equipo acumule a las mejores de todas las divisiones. El Equipo A se lleva la nº 1 de la 1ª, la nº 2 de la 2ª, la nº 1 de la 3ª y la nº 2 de la 4ª. El Equipo B, la nº 2 de la 1ª, la nº 1 de la 2ª, la nº 2 de la 3ª y la nº 1 de la 4ª. El Equipo C, las nº 3 de la 1ª y la 3ª junto a las nº 4 de la 2ª y la 4ª. El Equipo D, las nº 4 de la 1ª y la 3ª junto a las nº 3 de la 2ª y la 4ª.',
   },
   {
     title: 'Semifinales y final',
-    body: 'Ya no se compite en solitario. Cada eliminatoria enfrenta a dos equipos en cuatro partidos, uno por división, y avanza el equipo que gane la mayoría. Si queda 2–2 decide el total de sets ganados en la eliminatoria y, si el empate persiste, el total de juegos.',
+    body: 'Ya no se compite en solitario. Las semifinales son Equipo A contra Equipo D y Equipo B contra Equipo C, y cada una se juega a cuatro partidos, uno por división. Avanza el equipo que gane la mayoría. Si queda 2–2 decide el total de sets ganados en la eliminatoria y, si el empate persiste, el total de juegos. Lo importante: gana el equipo, no la pareja. Una pareja puede ganar su partido y quedar eliminada porque su equipo perdió la eliminatoria 3–1; a la final van las cuatro parejas del equipo ganador.',
+  },
+  {
+    title: 'El 1 Point Slam',
+    body: 'Aparte del torneo de dobles se juega el 1 Point Slam, una competición individual de dieciséis jugadores a eliminación directa: octavos, cuartos, semifinales y final, el domingo por la tarde. No cuenta para las divisiones ni para los equipos; tiene su propio cuadro y su propio campeón.',
   },
   {
     title: 'Puntualidad',

@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/equipos',      label: 'Parejas'       },
   { href: '/grupos',       label: 'Clasificación' },
   { href: '/partidos',     label: 'Partidos'      },
+  { href: '/1-point-slam', label: '1 Point Slam'  },
   { href: '/estadisticas', label: 'Stats'         },
   { href: '/galeria',      label: 'Galería'       },
   { href: '/premios',      label: 'Palmarés'      },

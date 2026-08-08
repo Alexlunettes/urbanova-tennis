@@ -3,35 +3,29 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin }  from '@/lib/auth'
 import { LEVELS, CATEGORY_META, CATEGORY_RULES } from '@/lib/tournament'
 import { calculateCategoryStandings, calculateGroupedStandings } from '@/lib/standings'
-import { survivorsForDivision, SEMIFINAL_SEEDING } from '@/lib/squads'
+import { rankSurvivorsForDivision, deriveTeams, SEMIFINAL_SEEDING } from '@/lib/squads'
+import { semifinalSlot, slotToISO } from '@/lib/tournament-data'
 
 /**
- * The four semifinal teams, composed BY HAND.
+ * The four semifinal teams, DERIVED FROM THE QUARTERFINAL RESULTS.
  *
  * From the semifinals the tournament is played by teams of four pairs, one per
- * division. Those teams are drawn by the organisers once every quarterfinal is
- * done — the site never generates them, because players have real-world
- * availability constraints that only the organisers know about.
+ * division. Nothing here is chosen by hand: each division ranks its four
+ * survivors on quarterfinal performance (see lib/squads.js), and the four teams
+ * are then assembled by the fixed composition matrix — Equipo A takes the #1 of
+ * the 1ª, the #2 of the 2ª, the #1 of the 3ª and the #2 of the 4ª, and so on.
  *
- * This endpoint therefore takes a complete composition and stores it verbatim.
- * It validates rather than decides:
- *
- *   · exactly four teams
- *   · one pair per division in each
- *   · every pair actually survived its quarterfinal
- *   · no pair used twice
- *
- * Saving also seeds the semifinals — Equipo 1 v Equipo 2 and Equipo 3 v
- * Equipo 4 — and creates their four matches each, so the public bracket fills
- * in the moment the organisers press save.
+ * Saving also seeds the semifinals — A v D and B v C — and creates their four
+ * matches each with their Sunday-morning kick-off times, so the public bracket
+ * fills in the moment the last quarterfinal is scored.
  */
 
-/** The pairs still standing, by division — what the admin picker offers. */
-async function loadSurvivors() {
+/** Ranks every division's survivors from the quarterfinals actually played. */
+async function loadRankings() {
   const [{ data: teams }, { data: allMatches }, { data: groups }] = await Promise.all([
     supabaseAdmin.from('teams').select('id, name, level'),
     supabaseAdmin.from('matches')
-      .select('id, level, stage, group_id, team1_id, team2_id, completed, winner_id, sets(team1_score, team2_score)')
+      .select('id, level, stage, slot, group_id, team1_id, team2_id, completed, winner_id, team1:team1_id(name), team2:team2_id(name), sets(team1_score, team2_score)')
       .in('stage', ['group_stage', 'quarterfinal']),
     supabaseAdmin.from('tournament_groups')
       .select('id, name, level, group_entries(team_id)').order('name'),
@@ -65,75 +59,71 @@ async function loadSurvivors() {
       standings = calculateCategoryStandings(level, divTeams, groupGames)
     }
 
-    const result = survivorsForDivision(level, quarters, standings)
-    byDivision[level] = result
+    // The group table is consulted for one thing only: identifying the pair
+    // that skipped the quarterfinals in divisions 1 and 2. It never influences
+    // the ranking of the pairs that actually played.
+    byDivision[level] = rankSurvivorsForDivision(level, quarters, standings)
 
     if (quarters.length < rules.quarterfinals) {
       blocking.push(`${CATEGORY_META[level].name}: faltan cuartos por sortear`)
-    } else if (!result.complete) {
-      blocking.push(`${CATEGORY_META[level].name}: faltan cuartos por jugar`)
+    } else if (!byDivision[level].complete) {
+      const { played, total } = byDivision[level]
+      blocking.push(`${CATEGORY_META[level].name}: faltan cuartos por jugar (${played}/${total})`)
     }
   }
 
   return { byDivision, blocking }
 }
 
-/** POST — store the hand-picked teams and seed the semifinals from them. */
-export async function POST(request) {
+/** GET — the current derivation, for the admin panel to preview. */
+export async function GET() {
   const denied = await requireAdmin()
   if (denied) return denied
 
-  const { teams: incoming } = await request.json().catch(() => ({}))
+  const { byDivision, blocking } = await loadRankings()
+  const { teams, ready } = deriveTeams(byDivision)
 
-  if (!Array.isArray(incoming) || incoming.length !== 4) {
-    return NextResponse.json({ error: 'Se requieren exactamente 4 equipos' }, { status: 400 })
-  }
+  return NextResponse.json({ byDivision, teams, ready, blocking })
+}
 
-  const { byDivision, blocking } = await loadSurvivors()
+/** POST — derive the teams from the results and seed the semifinals. */
+export async function POST() {
+  const denied = await requireAdmin()
+  if (denied) return denied
+
+  const { byDivision, blocking } = await loadRankings()
   if (blocking.length > 0) {
     return NextResponse.json({ error: blocking.join(' · ') }, { status: 400 })
   }
 
-  // Only pairs that actually survived their quarterfinal may be picked.
-  const allowed = {}
-  for (const level of LEVELS) {
-    allowed[level] = new Set(byDivision[level].survivors.map(s => s.team_id))
+  const { teams: derived, ready } = deriveTeams(byDivision)
+  if (!ready || derived.some(t => !t.complete)) {
+    return NextResponse.json(
+      { error: 'Los cuartos no están completos: no se pueden formar los equipos todavía.' },
+      { status: 400 },
+    )
   }
 
+  // Sanity check the matrix against the data before writing anything: sixteen
+  // distinct pairs, four per team, one per division.
   const used = new Set()
-  const clean = []
-
-  for (const [i, team] of incoming.entries()) {
-    const members = {}
+  for (const team of derived) {
     for (const level of LEVELS) {
-      const id = team?.members?.[level] ?? team?.members?.[String(level)]
+      const id = team.members[level]?.team_id
       if (!id) {
         return NextResponse.json(
-          { error: `Equipo ${i + 1}: falta la pareja de ${CATEGORY_META[level].name}` },
-          { status: 400 },
-        )
-      }
-      if (!allowed[level].has(id)) {
-        return NextResponse.json(
-          { error: `Equipo ${i + 1}: esa pareja de ${CATEGORY_META[level].name} no está clasificada` },
-          { status: 400 },
+          { error: `${team.name}: falta la pareja de ${CATEGORY_META[level].name}` },
+          { status: 500 },
         )
       }
       if (used.has(id)) {
         return NextResponse.json(
-          { error: `Una pareja no puede estar en dos equipos (${CATEGORY_META[level].name})` },
-          { status: 400 },
+          { error: `Una pareja quedaría en dos equipos (${CATEGORY_META[level].name})` },
+          { status: 500 },
         )
       }
       used.add(id)
-      members[level] = id
     }
-
-    const name = String(team?.name ?? '').trim() || `Equipo ${i + 1}`
-    if (name.length > 60) {
-      return NextResponse.json({ error: `Equipo ${i + 1}: nombre demasiado largo` }, { status: 400 })
-    }
-    clean.push({ seed: i + 1, name, members })
   }
 
   // Never disturb a knockout already in progress.
@@ -152,22 +142,22 @@ export async function POST(request) {
 
   const { data: created, error: squadError } = await supabaseAdmin
     .from('squads')
-    .insert(clean.map(t => ({ name: t.name, seed: t.seed })))
+    .insert(derived.map(t => ({ name: t.name, seed: t.seed })))
     .select('id, name, seed')
   if (squadError) return NextResponse.json({ error: squadError.message }, { status: 500 })
 
   const bySeed = Object.fromEntries(created.map(s => [s.seed, s]))
 
   const { error: memberError } = await supabaseAdmin.from('squad_members').insert(
-    clean.flatMap(t => LEVELS.map(level => ({
+    derived.flatMap(t => LEVELS.map(level => ({
       squad_id: bySeed[t.seed].id,
-      team_id:  t.members[level],
+      team_id:  t.members[level].team_id,
       category: level,
     }))),
   )
   if (memberError) return NextResponse.json({ error: memberError.message }, { status: 500 })
 
-  // Seed the semifinals and create their matches.
+  // Seed the semifinals — A v D and B v C — and create their matches.
   const { data: encounters } = await supabaseAdmin
     .from('squad_encounters')
     .select('id, position').eq('round', 'semifinal').order('position')
@@ -176,22 +166,26 @@ export async function POST(request) {
   for (const [i, [seedA, seedB]] of SEMIFINAL_SEEDING.entries()) {
     const encounter = encounters?.[i]
     if (!encounter) continue
+    const position = encounter.position ?? i + 1
 
     await supabaseAdmin.from('squad_encounters')
       .update({ squad1_id: bySeed[seedA].id, squad2_id: bySeed[seedB].id })
       .eq('id', encounter.id)
 
-    const a = clean.find(t => t.seed === seedA)
-    const b = clean.find(t => t.seed === seedB)
+    const a = derived.find(t => t.seed === seedA)
+    const b = derived.find(t => t.seed === seedB)
     for (const level of LEVELS) {
+      const slot = semifinalSlot(position, level)
       matchRows.push({
         level,
         stage:              'semifinal',
         squad_encounter_id: encounter.id,
         // team1 always belongs to squad1 — the whole bracket relies on it.
-        team1_id:  a.members[level],
-        team2_id:  b.members[level],
-        completed: false,
+        team1_id:     a.members[level].team_id,
+        team2_id:     b.members[level].team_id,
+        completed:    false,
+        scheduled_at: slot ? slotToISO(slot.day, slot.time) : null,
+        court:        slot?.court ?? null,
       })
     }
   }
@@ -213,11 +207,11 @@ export async function POST(request) {
     ok: true,
     teams: created.length,
     matches: matchRows.length,
-    message: `${created.length} equipos guardados · semifinales montadas`,
+    message: `${created.length} equipos formados desde los cuartos · semifinales montadas`,
   })
 }
 
-/** DELETE — undo the draw, as long as nothing has been played. */
+/** DELETE — undo the derivation, as long as nothing has been played. */
 export async function DELETE() {
   const denied = await requireAdmin()
   if (denied) return denied

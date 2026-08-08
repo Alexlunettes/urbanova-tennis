@@ -34,17 +34,48 @@ best group winners draw the qualifying third-placed pairs, the remaining
 winner draws the weakest runner-up, and the other two runners-up meet. Every
 division ends with **four surviving pairs**.
 
-**Equipos — drawn by hand after the quarterfinals.** An *equipo* is not a
+**Equipos — derived from the quarterfinal results.** An *equipo* is not a
 group-stage pair: it comes into existence only at the semifinals and is made up
-of four pairs, one per division. Once every quarterfinal is played, the sixteen
-survivors are drawn at random into four teams **by the organisers**, in the
-admin panel. The site never generates or randomises them in code — players have
-real availability constraints that only the organisers know about, so the draw
-happens offline and is recorded here.
+of four pairs, one per division. Nothing is drawn by hand and nothing is
+random. Each division ranks its four survivors on **how convincingly they won
+their quarterfinal** — set difference first, so a 2–0 always outranks a 2–1,
+then game difference. In divisions 1 and 2 the pair that skipped the
+quarterfinals is #1 by right. Group-stage position plays no part.
 
-**Semifinals and final.** Equipo versus equipo over four matches, one per
-division. The equipo winning the majority advances; 2–2 is broken by total
-sets, then total games.
+The sixteen survivors are then assembled by a fixed matrix (`TEAM_COMPOSITION`
+in `lib/squads.js`), staggered so no team collects every top seed:
+
+| Equipo | 1ª | 2ª | 3ª | 4ª |
+| ------ | -- | -- | -- | -- |
+| A      | #1 | #2 | #1 | #2 |
+| B      | #2 | #1 | #2 | #1 |
+| C      | #3 | #4 | #3 | #4 |
+| D      | #4 | #3 | #4 | #3 |
+
+**Semifinals and final.** **A v D** and **B v C**, Sunday morning, over four
+matches each, one per division. The equipo winning the majority advances; 2–2
+is broken by total sets, then total games.
+
+The team advances, **not the pairs that won**. A pair can win its semifinal
+2–0 and still be out because its team lost the tie 3–1 — the final is contested
+by the four pairs of the *winning team*. Sunday's finals run 17:00 (4ª), 19:00
+(2ª), 21:00 (1ª) and 22:30 (3ª), all on Pista 1.
+
+## 1 Point Slam
+
+A separate **individual** knockout for sixteen players, played on the Sunday
+evening: round of 16 at 18:30, then quarterfinals, semifinals and final from
+20:30. It has its own page (`/1-point-slam`), its own tables and its own admin
+tab; it does not touch the divisions, the equipos or the main bracket.
+
+Entrants reference existing `players` rows, so nobody is duplicated — a slam
+player is the same person record as in the doubles draw. Only the round-of-16
+line-up is stored; every later round's participants are derived from the
+winners below it, so entering a result advances the winner immediately and
+correcting one un-advances them. The draw is in `SLAM_DRAW` (`lib/slam.js`),
+random except that Rocío and Carla sit in opposite halves. Seed 3 is a
+placeholder — give it a `name` matching a `players` row and re-run *Preparar el
+cuadro* to fill it in.
 
 > In the database these rows are still called `squads` / `squad_members` /
 > `squad_encounters`. Only the user-facing wording changed; renaming the tables
@@ -72,6 +103,10 @@ SQL editor (Dashboard → SQL Editor → New query):
    and drops the obsolete `is_reduced` column.
 4. `0004_analytics.sql` — the anonymous page-view log behind the admin
    analytics tab. No IPs, no cookies, no cross-day identifier.
+5. `0005_mvp_per_category.sql` — one MVP vote per device **per division**
+   instead of one overall. Widens the unique constraint and backfills existing
+   votes with the division of the player they were cast for.
+6. `0006_one_point_slam.sql` — the 1 Point Slam's two tables.
 
 Then import the roster and fixtures:
 
@@ -100,10 +135,15 @@ results are being recorded, use the admin panel instead.
    match to pending.
 2. **Eliminatorias** — three steps in the order they happen:
    *Sortear los cuartos* per division (needs that division's groups finished),
-   then *Formar equipos* once every quarterfinal is played (which also seeds
-   the semifinals 1v4 and 2v3), then *Montar la final* once both semifinals are
-   settled. Every step is safe to repeat — nothing already played is
-   overwritten.
+   then *Formar equipos* once every quarterfinal is played — the panel shows
+   the ranking each division produced and the teams that fall out of it, and
+   saving seeds the semifinals A v D and B v C — then *Montar la final* once
+   both semifinals are settled. Every step is safe to repeat, and none of them
+   will overwrite something already played.
+3. **1 Point Slam** — *Preparar el cuadro* creates the sixteen entrants and
+   fifteen matches, then pick the winner of each match. Later rounds unlock as
+   the ones feeding them are decided; changing a result clears anything
+   downstream that no longer makes sense.
 
 Standings and squad results are **derived**, never stored, so correcting any
 score immediately updates the tables and the whole bracket. Public pages
@@ -121,7 +161,8 @@ app/
   partidos/             Calendar + bracket, in two tabs
   cuadro/               Redirect into the bracket tab
   estadisticas/         Per-pair statistics, by division
-  premios/              End-of-tournament awards + public MVP vote
+  1-point-slam/         The individual 16-player knockout
+  premios/              End-of-tournament awards + public MVP vote (one per division)
   galeria/              Photos 2026 / 2025 and interviews
   mvp/  cuadro/         Redirects kept for previously shared links
   reglas/
@@ -134,7 +175,8 @@ lib/
   tournament.js         Division rules, formats, qualification, seeding
   tournament-data.js    2026 roster + fixtures (source of truth)
   standings.js          League tables, incl. the four-match exception
-  squads.js             Survivors, squad formation, tie resolution
+  squads.js             Survivor ranking, team composition, tie resolution
+  slam.js               1 Point Slam draw + bracket derivation
   auth.js               Signed admin sessions
   analytics.js          UA/referrer parsing + daily visitor hashing
   analytics-queries.js  Aggregations for the admin dashboard

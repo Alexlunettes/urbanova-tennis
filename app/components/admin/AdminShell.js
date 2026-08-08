@@ -3,19 +3,28 @@
 import { useState } from 'react'
 import ScoreEntry from './ScoreEntry'
 import KnockoutManager from './KnockoutManager'
+import SlamManager from './SlamManager'
 import AnalyticsPanel from './AnalyticsPanel'
 import { cn } from '@/lib/cn'
 
 const TABS = [
   { key: 'scores',    label: 'Resultados' },
   { key: 'knockout',  label: 'Eliminatorias' },
+  { key: 'slam',      label: '1 Point Slam' },
   { key: 'analytics', label: 'Analítica' },
 ]
 
-export default function AdminShell({ matches, divisions, survivors, squads, bracket, counts, analytics }) {
+export default function AdminShell({
+  matches, divisions, rankings, derivedTeams, teamsReady, squads, bracket, counts, analytics, slam,
+}) {
   const [tab, setTab] = useState('scores')
 
-  const badge = { scores: counts.pending, knockout: counts.resolvedTies, analytics: 0 }
+  const badge = {
+    scores:    counts.pending,
+    knockout:  counts.resolvedTies,
+    slam:      counts.slamPending,
+    analytics: 0,
+  }
 
   return (
     <div>
@@ -55,11 +64,16 @@ export default function AdminShell({ matches, divisions, survivors, squads, brac
       </div>
 
       {tab === 'scores'   && <ScoreEntry matches={matches} />}
+      {tab === 'slam'     && (
+        <SlamManager rounds={slam.rounds} champion={slam.champion} ready={slam.ready} />
+      )}
       {tab === 'analytics' && <AnalyticsPanel data={analytics} />}
       {tab === 'knockout' && (
         <KnockoutManager
           divisions={divisions}
-          survivors={survivors}
+          rankings={rankings}
+          derivedTeams={derivedTeams}
+          teamsReady={teamsReady}
           squads={squads}
           bracket={bracket}
         />

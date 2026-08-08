@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { isAdmin } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { calculateCategoryStandings, calculateGroupedStandings } from '@/lib/standings'
-import { buildBracket, survivorsForDivision } from '@/lib/squads'
+import { buildBracket, rankSurvivorsForDivision, deriveTeams } from '@/lib/squads'
+import { buildSlamBracket } from '@/lib/slam'
 import { LEVELS, CATEGORY_RULES } from '@/lib/tournament'
 import { getAnalytics } from '@/lib/analytics-queries'
 import AdminShell from '@/app/components/admin/AdminShell'
@@ -24,8 +25,10 @@ const MATCH_FIELDS = `
 export default async function AdminPage() {
   if (!(await isAdmin())) redirect('/admin/login')
 
-  const [{ data: matches }, { data: teams }, { data: groups }, { data: squads }, { data: encounters }] =
-    await Promise.all([
+  const [
+    { data: matches }, { data: teams }, { data: groups }, { data: squads }, { data: encounters },
+    { data: slamParticipants }, { data: slamMatches },
+  ] = await Promise.all([
       supabase.from('matches').select(MATCH_FIELDS)
         .order('scheduled_at', { ascending: true, nullsFirst: false }),
       supabase.from('teams').select('id, name, level'),
@@ -36,6 +39,11 @@ export default async function AdminPage() {
         .order('seed', { nullsFirst: false }),
       supabase.from('squad_encounters')
         .select('id, round, position, squad1_id, squad2_id').order('position'),
+
+      supabase.from('slam_participants')
+        .select('id, seed, label, player:player_id(id, name)').order('seed'),
+      supabase.from('slam_matches')
+        .select('id, round, position, winner_slot, score, completed, scheduled_at, court'),
     ])
 
   const all = matches ?? []
@@ -58,9 +66,9 @@ export default async function AdminPage() {
   )
 
   // Per-division progress, which is what drives the knockout controls, plus
-  // the surviving pairs the organisers pick from when drawing the teams.
-  const divisions = {}
-  const survivors = {}
+  // the ranking of the survivors the teams are derived from.
+  const divisions  = {}
+  const rankings   = {}
   for (const level of LEVELS) {
     const rules      = CATEGORY_RULES[level]
     const divTeams   = (teams ?? []).filter(t => t.level === level)
@@ -87,9 +95,25 @@ export default async function AdminPage() {
     }
 
     const groupsPlayed = groupGames.filter(m => m.completed).length
-    const alive        = survivorsForDivision(level, quarters, standings)
+    const ranking      = rankSurvivorsForDivision(level, quarters, standings)
 
-    survivors[level] = alive.survivors.map(s => ({ id: s.team_id, name: s.team_name }))
+    // Plain objects only — this crosses the server/client boundary, and the
+    // performance object carries getters that would not survive the trip.
+    rankings[level] = {
+      complete: ranking.complete,
+      played:   ranking.played,
+      total:    ranking.total,
+      ranked:   ranking.ranked.map(r => ({
+        rank:      r.rank,
+        team_id:   r.team_id,
+        team_name: r.team_name,
+        viaBye:    r.viaBye,
+        setDiff:   r.performance?.setDiff  ?? null,
+        gameDiff:  r.performance?.gameDiff ?? null,
+        setsWon:   r.performance?.setsWon  ?? null,
+        setsLost:  r.performance?.setsLost ?? null,
+      })),
+    }
 
     divisions[level] = {
       groupsPlayed,
@@ -97,14 +121,27 @@ export default async function AdminPage() {
       groupsDone:    groupGames.length > 0 && groupsPlayed === groupGames.length,
       quartersDrawn: quarters.length > 0,
       quartersPlayed: quarters.filter(m => m.completed).length,
-      survivors:     alive.survivors.length,
+      survivors:     ranking.ranked.length,
     }
+  }
+
+  // What the four teams will look like given the results so far.
+  const { teams: derivedTeams, ready: teamsReady } = deriveTeams(rankings)
+
+  // The 1 Point Slam is its own competition; it just shares this panel.
+  const slamBracket = buildSlamBracket(slamParticipants ?? [], slamMatches ?? [])
+  const slam = {
+    ...slamBracket,
+    ready: (slamParticipants?.length ?? 0) > 0,
   }
 
   const counts = {
     pending:      all.filter(m => !m.completed).length,
     completed:    all.filter(m => m.completed).length,
     resolvedTies: bracket.filter(b => b.resolution.isComplete).length,
+    slamPending:  slam.ready
+      ? slamBracket.rounds.flatMap(r => r.matches).filter(m => m.ready && !m.completed).length
+      : 0,
   }
 
   const analytics      = await getAnalytics(30)
@@ -134,11 +171,14 @@ export default async function AdminPage() {
       <AdminShell
         matches={all}
         divisions={divisions}
-        survivors={survivors}
+        rankings={rankings}
+        derivedTeams={derivedTeams}
+        teamsReady={teamsReady}
         squads={squadList}
         bracket={bracket}
         counts={counts}
         analytics={analytics}
+        slam={slam}
       />
     </PageShell>
   )
