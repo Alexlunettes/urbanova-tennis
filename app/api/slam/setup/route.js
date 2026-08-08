@@ -1,7 +1,7 @@
 import { NextResponse }  from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin }  from '@/lib/auth'
-import { slamParticipantRows, slamMatchRows, SLAM_DRAW } from '@/lib/slam'
+import { slamParticipantRows, slamMatchRows, assertOppositeHalves, SLAM_DRAW } from '@/lib/slam'
 import { slotToISO }     from '@/lib/tournament-data'
 
 /**
@@ -20,6 +20,13 @@ export async function POST() {
   const denied = await requireAdmin()
   if (denied) return denied
 
+  // Refuse to write a draw that would let the two of them meet early.
+  try {
+    assertOppositeHalves()
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+
   const wanted = SLAM_DRAW.filter(d => d.name).map(d => d.name)
 
   const { data: players, error: playerError } = await supabaseAdmin
@@ -28,8 +35,28 @@ export async function POST() {
     return NextResponse.json({ error: playerError.message }, { status: 500 })
   }
 
-  const byName  = Object.fromEntries((players ?? []).map(p => [p.name, p.id]))
-  const missing = wanted.filter(n => !byName[n])
+  const byName = Object.fromEntries((players ?? []).map(p => [p.name, p.id]))
+
+  // Someone flagged `external` plays only the slam, so there is no existing
+  // record to reuse and creating one is correct rather than duplication.
+  const toCreate = SLAM_DRAW
+    .filter(d => d.name && d.external && !byName[d.name])
+    .map(d => ({ name: d.name }))
+
+  if (toCreate.length > 0) {
+    const { data: created, error } = await supabaseAdmin
+      .from('players').insert(toCreate).select('id, name')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    for (const p of created ?? []) byName[p.name] = p.id
+  }
+
+  // Everyone else must already be in the tournament. A miss here almost always
+  // means a spelling difference, and inserting would produce exactly the
+  // duplicate this is meant to avoid.
+  const missing = SLAM_DRAW
+    .filter(d => d.name && !d.external && !byName[d.name])
+    .map(d => d.name)
+
   if (missing.length > 0) {
     return NextResponse.json(
       {
@@ -52,16 +79,19 @@ export async function POST() {
     .from('slam_matches').select('round, position')
   const have = new Set((existing ?? []).map(m => `${m.round}:${m.position}`))
 
-  const toCreate = slamMatchRows(slotToISO).filter(r => !have.has(`${r.round}:${r.position}`))
-  if (toCreate.length > 0) {
-    const { error } = await supabaseAdmin.from('slam_matches').insert(toCreate)
+  const newMatches = slamMatchRows(slotToISO).filter(r => !have.has(`${r.round}:${r.position}`))
+  if (newMatches.length > 0) {
+    const { error } = await supabaseAdmin.from('slam_matches').insert(newMatches)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({
     ok: true,
-    participants: 16,
-    created: toCreate.length,
-    message: `1 Point Slam listo · 16 participantes · ${toCreate.length} partidos creados`,
+    participants: SLAM_DRAW.length,
+    created: newMatches.length,
+    message:
+      `1 Point Slam listo · ${SLAM_DRAW.length} participantes · ` +
+      `${newMatches.length} partidos creados` +
+      (toCreate.length ? ` · ${toCreate.length} jugador nuevo` : ''),
   })
 }

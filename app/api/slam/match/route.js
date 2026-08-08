@@ -1,7 +1,7 @@
 import { NextResponse }  from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin }  from '@/lib/auth'
-import { buildSlamBracket, SLAM_ROUND_KEYS } from '@/lib/slam'
+import { buildSlamBracket, descendantsOf, SLAM_ROUND_KEYS } from '@/lib/slam'
 
 /** Loads the bracket as the server currently sees it. */
 async function loadBracket() {
@@ -63,6 +63,9 @@ export async function POST(request) {
     )
   }
 
+  // Re-picking the same winner is a no-op and must not wipe the rounds above.
+  const changed = match.winnerSlot !== slot
+
   const { error } = await supabaseAdmin
     .from('slam_matches')
     .update({ winner_slot: slot, score: score?.trim() || null, completed: true })
@@ -70,11 +73,7 @@ export async function POST(request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Changing a result can orphan later rounds — a player who no longer belongs
-  // there must not keep a win they earned on the old path. Anything downstream
-  // whose participants no longer resolve is reset.
-  const cleared = await clearOrphaned()
-
+  const cleared = changed ? await clearDownstream(round, pos) : 0
   return NextResponse.json({ ok: true, cleared })
 }
 
@@ -98,34 +97,35 @@ export async function DELETE(request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const cleared = await clearOrphaned()
+  const cleared = await clearDownstream(round, pos)
   return NextResponse.json({ ok: true, cleared })
 }
 
 /**
- * Clears results that no longer have two known participants.
+ * Clears every result above the match that just changed.
  *
- * Rebuilds the bracket and resets any completed match whose slots no longer
- * resolve, repeating until nothing changes — one correction in the round of 16
- * can cascade all the way to the final.
+ * A win is only meaningful against the opponent who was actually there, and a
+ * match stores its winner as a SLOT rather than a person. So when the player
+ * feeding a slot changes, leaving the old slot in place would silently
+ * re-attribute someone else's win — flip the round of 16 and the quarterfinal
+ * above it would still read "won", but now by a player who never played it.
+ *
+ * Clearing the whole chain to the final is the honest response: those matches
+ * have to be re-entered because, as far as the bracket is concerned, they have
+ * not happened yet.
  */
-async function clearOrphaned() {
+async function clearDownstream(round, position) {
+  const chain = descendantsOf(round, position)
   let cleared = 0
 
-  for (let pass = 0; pass < SLAM_ROUND_KEYS.length; pass++) {
-    const bracket = await loadBracket()
-    const stale = bracket.rounds
-      .flatMap(r => r.matches)
-      .filter(m => m.completed && m.id && !m.ready)
-
-    if (stale.length === 0) break
-
-    for (const m of stale) {
-      await supabaseAdmin.from('slam_matches')
-        .update({ winner_slot: null, score: null, completed: false })
-        .eq('id', m.id)
-      cleared++
-    }
+  for (const target of chain) {
+    const { data } = await supabaseAdmin
+      .from('slam_matches')
+      .update({ winner_slot: null, score: null, completed: false })
+      .eq('round', target.round).eq('position', target.position)
+      .eq('completed', true)
+      .select('id')
+    cleared += data?.length ?? 0
   }
 
   return cleared

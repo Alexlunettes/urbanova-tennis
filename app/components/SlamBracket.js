@@ -15,9 +15,13 @@ import { cn } from '@/lib/cn'
 export default function SlamBracket({ rounds, champion }) {
   return (
     <div className="-mx-5 overflow-x-auto px-5 pb-4 sm:mx-0 sm:px-0">
-      <div className="flex min-w-max gap-4 lg:gap-6">
+      {/* `items-stretch` makes every column as tall as the round of 16, and
+          `justify-around` inside each then centres a match exactly between the
+          two that feed it — the alignment is arithmetic rather than hand-tuned
+          gaps, so it survives any change in card height. */}
+      <div className="flex min-w-max items-stretch gap-3 lg:gap-5">
         {rounds.map((round, i) => (
-          <section key={round.key} className={cn('shrink-0', i === 0 ? 'w-68' : 'w-64')}>
+          <section key={round.key} className={cn('flex shrink-0 flex-col', i === 0 ? 'w-68' : 'w-64')}>
             <div className="mb-4">
               <h3 className="font-display text-lg text-fg">{round.label.toUpperCase()}</h3>
               <p className="mt-0.5 text-[11px] text-fg-subtle">
@@ -26,12 +30,7 @@ export default function SlamBracket({ rounds, champion }) {
               </p>
             </div>
 
-            <div
-              className={cn(
-                'flex h-full flex-col',
-                i === 0 ? 'gap-2.5' : i === 1 ? 'gap-14' : i === 2 ? 'gap-38' : 'justify-center',
-              )}
-            >
+            <div className="flex flex-1 flex-col justify-around gap-2.5">
               {round.matches.map(match => (
                 <SlamMatch
                   key={`${match.round}:${match.position}`}
@@ -45,28 +44,30 @@ export default function SlamBracket({ rounds, champion }) {
         ))}
 
         {/* ── The champion ── */}
-        <section className="w-56 shrink-0 self-center">
+        <section className="flex w-56 shrink-0 flex-col">
           <div className="mb-4">
             <h3 className="font-display text-lg text-fg">CAMPEÓN</h3>
             <p className="mt-0.5 text-[11px] text-fg-subtle">1 Point Slam 2026</p>
           </div>
-          <div
-            className={cn(
-              'rounded-2xl border p-5 text-center',
-              champion
-                ? 'border-sand-300/70 bg-sand-50/70 shadow-lg ring-1 ring-sand-300/30 dark:border-sand-400/30 dark:bg-sand-400/[0.07]'
-                : 'border-dashed border-hairline-strong bg-surface-2/40',
-            )}
-          >
-            <p className="text-2xl" aria-hidden="true">{champion ? '🏆' : '—'}</p>
-            <p
+          <div className="flex flex-1 flex-col justify-around">
+            <div
               className={cn(
-                'mt-2 font-display text-lg leading-tight',
-                champion ? 'text-fg' : 'italic text-fg-subtle',
+                'rounded-2xl border p-5 text-center',
+                champion
+                  ? 'border-sand-300/70 bg-sand-50/70 shadow-lg ring-1 ring-sand-300/30 dark:border-sand-400/30 dark:bg-sand-400/[0.07]'
+                  : 'border-dashed border-hairline-strong bg-surface-2/40',
               )}
             >
-              {champion ? participantLabel(champion) : 'Por decidir'}
-            </p>
+              <p className="text-2xl" aria-hidden="true">{champion ? '🏆' : '—'}</p>
+              <p
+                className={cn(
+                  'mt-2 font-display text-lg leading-tight',
+                  champion ? 'text-fg' : 'italic text-fg-subtle',
+                )}
+              >
+                {champion ? participantLabel(champion) : 'Por decidir'}
+              </p>
+            </div>
           </div>
         </section>
       </div>
