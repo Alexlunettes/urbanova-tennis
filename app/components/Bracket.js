@@ -51,14 +51,6 @@ export default function Bracket({ quarterfinalsByDivision, semifinals, final, sq
 
         <Connector />
 
-        {/* ── How the teams come out of the quarterfinals ── */}
-        <section className="w-68 shrink-0 self-start">
-          <ColumnHeading title="Formación de equipos" note="Se calcula con los cuartos" />
-          <CompositionNode squads={squads} />
-        </section>
-
-        <Connector />
-
         {/* ── Column 2: semifinals ── */}
         <section className="w-80 shrink-0 self-center sm:w-88">
           <ColumnHeading title="Semifinales" note="A vs D y B vs C · domingo por la mañana" />
@@ -227,101 +219,6 @@ function SeedLegend() {
       «el segundo mejor de todos los primeros de grupo», y{' '}
       <span className="font-mono">3º TOP1</span> «el mejor de todos los terceros».
     </p>
-  )
-}
-
-/* ─────────────────────── HOW THE TEAMS ARE BUILT ─────────────────────── */
-
-/**
- * The hinge of the whole bracket: individual pairs go in, teams come out.
- *
- * Nothing is drawn by hand and nothing is random. Each division ranks its four
- * survivors on how convincingly they won their quarterfinal, and the fixed
- * matrix below turns those sixteen pairs into four teams. Before the
- * quarterfinals are done this explains the rule; afterwards it lists the teams
- * it produced.
- */
-function CompositionNode({ squads = [] }) {
-  const formed = squads.length > 0
-  const bySeed = Object.fromEntries(squads.map(s => [s.seed, s]))
-
-  return (
-    <div
-      className={cn(
-        'rounded-2xl border p-4',
-        formed
-          ? 'border-hairline bg-surface shadow-xs'
-          : 'border-dashed border-accent/35 bg-accent-soft/50',
-      )}
-    >
-      <p className="text-[12px] leading-relaxed text-fg-muted">
-        {formed ? (
-          <>Estos son los cuatro equipos que disputan las semifinales, formados
-          con los resultados de los cuartos. Cada uno reúne una pareja de cada
-          división.</>
-        ) : (
-          <>Al terminar los cuartos, cada división ordena a sus{' '}
-          <span className="font-medium text-fg">cuatro supervivientes</span> por
-          diferencia de sets y, si empatan, por diferencia de juegos. Los cuatro
-          equipos salen de esa clasificación con este reparto fijo:</>
-        )}
-      </p>
-
-      <div className="mt-3.5 space-y-1.5">
-        {TEAM_COMPOSITION.map(spec => {
-          const squad = bySeed[spec.seed]
-          return (
-            <div
-              key={spec.key}
-              className={cn(
-                'rounded-lg border px-2.5 py-1.5',
-                formed ? 'border-hairline bg-surface-2/50' : 'border-dashed border-hairline-strong',
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded bg-accent-soft font-display text-[10px] text-accent">
-                  {spec.key}
-                </span>
-                <span className={cn('truncate text-[12px]', formed ? 'text-fg' : 'text-fg-muted')}>
-                  {squad?.name ?? spec.name}
-                </span>
-              </div>
-
-              <ul className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 pl-6.5">
-                {LEVELS.map(level => {
-                  const pair = squad?.membersByCategory?.[level]
-                  return (
-                    <li key={level} className="flex items-center gap-1">
-                      <span className={cn('h-1 w-1 shrink-0 rounded-full', CATEGORY_COLOR[level].dot)} />
-                      <span className="font-mono text-[9.5px] text-fg-subtle" title={CATEGORY_META[level].name}>
-                        {CATEGORY_META[level].short}
-                        <span className="text-fg-muted">#{spec.ranks[level]}</span>
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-
-              {formed && (
-                <ul className="mt-1 space-y-0.5 pl-6.5">
-                  {LEVELS.map(level => (
-                    <li key={level} className="truncate text-[10.5px] text-fg-muted">
-                      {squad?.membersByCategory?.[level]?.name ?? '—'}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      <p className="mt-3 text-[10.5px] leading-relaxed text-fg-subtle">
-        <span className="font-mono">#1</span> es la mejor superviviente de esa
-        división. En 1ª y 2ª la pareja que pasó directa a semifinales es la{' '}
-        <span className="font-mono">#1</span> sin jugar los cuartos.
-      </p>
-    </div>
   )
 }
 
