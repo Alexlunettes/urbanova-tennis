@@ -2,7 +2,7 @@ import {
   CATEGORY_META, CATEGORY_COLOR, CATEGORY_RULES, LEVELS,
   quarterfinalSeedLabels, courtLabel,
 } from '@/lib/tournament'
-import { quarterfinalSlot } from '@/lib/tournament-data'
+import { quarterfinalSlot, finalSlot } from '@/lib/tournament-data'
 import { TEAM_COMPOSITION, SEMIFINAL_SEEDING } from '@/lib/squads'
 import Badge from './ui/Badge'
 import { cn } from '@/lib/cn'
@@ -329,11 +329,14 @@ function MatchBreakdown({ tie }) {
           const sets = (m?.sets ?? []).slice().sort((a, b) => a.set_number - b.set_number)
           const t1Won = m?.completed && m.winner_id === m.team1_id
           const t2Won = m?.completed && m.winner_id === m.team2_id
+          // A projected final has no match rows yet, so fall back to the
+          // published kick-off times rather than showing four dashes.
+          const slot  = tie.round === 'final' ? finalSlot(level) : null
           const when  = m?.scheduled_at
             ? new Date(m.scheduled_at).toLocaleTimeString('es-ES', {
                 hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid',
               })
-            : null
+            : slot?.time ?? null
 
           return (
             <li key={level} className="flex items-center gap-1.5 text-[10.5px]">
@@ -350,7 +353,7 @@ function MatchBreakdown({ tie }) {
               <span className="tabular ml-auto shrink-0 font-mono text-[9.5px] text-fg-subtle">
                 {sets.length > 0
                   ? sets.map(s => `${s.team1_score}-${s.team2_score}`).join(' ')
-                  : when ? `${when}${m?.court ? ` · ${courtLabel(m.court)}` : ''}` : '—'}
+                  : when ? `${when}${(m?.court ?? slot?.court) ? ` · ${courtLabel(m?.court ?? slot.court)}` : ''}` : '—'}
               </span>
             </li>
           )
