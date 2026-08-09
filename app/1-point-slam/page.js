@@ -83,7 +83,7 @@ export default async function SlamPage() {
         <>
           {!keptApart && (
             <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300">
-              Aviso: el sorteo actual permitiría que Rocío y Carla se cruzaran antes de la final.
+              Aviso: el sorteo actual no respeta la separación prevista entre dos participantes.
               Vuelve a preparar el cuadro desde el panel de administración.
             </p>
           )}
@@ -111,7 +111,7 @@ function ParticipantList({ participants }) {
       <h2 className="mb-1 font-display text-2xl text-fg">LOS 16 PARTICIPANTES</h2>
       <p className="mb-5 text-[13px] text-fg-muted">
         Dos jugadores de la misma mitad pueden cruzarse en cualquier ronda; dos de mitades
-        distintas solo pueden encontrarse en la final. Rocío y Carla están en mitades opuestas.
+        distintas solo pueden encontrarse en la final.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
