@@ -24,9 +24,10 @@ export default function SlamBracket({ rounds, champion }) {
           <section key={round.key} className={cn('flex shrink-0 flex-col', i === 0 ? 'w-68' : 'w-64')}>
             <div className="mb-4">
               <h3 className="font-display text-lg text-fg">{round.label.toUpperCase()}</h3>
+              {/* No per-round time: the whole slam is played in one block, and
+                  repeating the same hour on four columns reads as four slots. */}
               <p className="mt-0.5 text-[11px] text-fg-subtle">
                 {round.matches.length} {round.matches.length === 1 ? 'partido' : 'partidos'}
-                {round.matches[0]?.scheduled_at && ` · ${timeOf(round.matches[0].scheduled_at)}`}
               </p>
             </div>
 
@@ -101,12 +102,13 @@ function SlamMatch({ match, roundIndex, isFinal }) {
         fallback={feederLabel(roundIndex, match.position, 2)}
       />
 
-      {(match.score || match.scheduled_at) && (
+      {/* Only a score goes here. Every match kicks off in the same 19:30 block,
+          so stamping the hour on all fifteen cards would just be noise. */}
+      {completed && match.score && (
         <div className="flex items-center gap-2 border-t border-hairline bg-surface-2/40 px-3 py-1">
           <span className="tabular font-mono text-[9.5px] text-fg-subtle">
-            {completed && match.score
-              ? match.score
-              : `${timeOf(match.scheduled_at)}${match.court ? ` · ${courtLabel(match.court)}` : ''}`}
+            {match.score}
+            {match.court ? ` · ${courtLabel(match.court)}` : ''}
           </span>
         </div>
       )}
@@ -150,13 +152,6 @@ function feederLabel(roundIndex, position, slot) {
   if (roundIndex === 0) return 'Por confirmar'
   const previous = ['Octavos', 'Cuartos', 'Semifinal'][roundIndex - 1]
   return `Ganador de ${previous} ${position * 2 - (slot === 1 ? 1 : 0)}`
-}
-
-function timeOf(iso) {
-  if (!iso) return null
-  return new Date(iso).toLocaleTimeString('es-ES', {
-    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid',
-  })
 }
 
 /** A compact summary for the top of the page. */

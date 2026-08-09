@@ -49,9 +49,31 @@ export async function POST(request) {
       .insert({ player_id, voter_token, level })
 
     if (error) {
-      // 23505 = unique violation = this browser already voted in this division.
       if (error.code === '23505') {
-        return NextResponse.json({ error: 'already_voted', level }, { status: 409 })
+        // A unique violation SHOULD mean this browser already voted in this
+        // division. Confirm it against the table before saying so, because a
+        // leftover unique index on `voter_token` alone raises the same code —
+        // that is exactly how the old global one-vote-per-device lock survived
+        // a migration that tried to drop it by the wrong name, and reporting it
+        // as "already voted" is what made it invisible.
+        const { count } = await supabaseAdmin
+          .from('mvp_votes')
+          .select('id', { count: 'exact', head: true })
+          .eq('voter_token', voter_token)
+          .eq('level', level)
+
+        if (count && count > 0) {
+          return NextResponse.json({ error: 'already_voted', level }, { status: 409 })
+        }
+
+        return NextResponse.json(
+          {
+            error: 'La votación está restringida por dispositivo en todas las categorías. ' +
+                   'Falta aplicar la migración 0007 en Supabase.',
+            code: 'global_lock',
+          },
+          { status: 503 },
+        )
       }
       // 42703 = the `level` column is missing, i.e. migration 0005 has not run.
       if (error.code === '42703') {

@@ -2,7 +2,7 @@ import {
   CATEGORY_META, CATEGORY_COLOR, CATEGORY_RULES, LEVELS,
   quarterfinalSeedLabels, courtLabel,
 } from '@/lib/tournament'
-import { quarterfinalSlot, finalSlot } from '@/lib/tournament-data'
+import { quarterfinalSlot, finalSlot, semifinalSlot } from '@/lib/tournament-data'
 import { TEAM_COMPOSITION, SEMIFINAL_SEEDING } from '@/lib/squads'
 import Badge from './ui/Badge'
 import { cn } from '@/lib/cn'
@@ -58,10 +58,21 @@ export default function Bracket({ quarterfinalsByDivision, semifinals, final, sq
         <div className="space-y-8">
           {semifinals.length > 0 && teamsFormed
             ? semifinals.map((tie, i) => (
-                <TeamMatchup key={tie.id} tie={tie} label={`Semifinal ${i + 1}`} />
+                <TeamMatchup
+                  key={tie.id}
+                  tie={tie}
+                  label={`Semifinal ${i + 1}`}
+                  position={tie.position ?? i + 1}
+                />
               ))
             : SEMIFINAL_SEEDING.map(([a, b], i) => (
-                <TeamMatchup key={i} placeholder label={`Semifinal ${i + 1}`} seeds={[a, b]} />
+                <TeamMatchup
+                  key={i}
+                  placeholder
+                  label={`Semifinal ${i + 1}`}
+                  seeds={[a, b]}
+                  position={i + 1}
+                />
               ))}
         </div>
       </section>
@@ -237,7 +248,34 @@ function SeedLegend() {
  * one tag on the team that goes through, bold text on the pairs that won their
  * own match, and everything else stepped back.
  */
-function TeamMatchup({ tie, placeholder = false, label, isFinal = false, seeds }) {
+/**
+ * The four divisions of a tie, in the order they are actually played.
+ *
+ * Neither round runs in division order — the semifinals go 4ª, 2ª, 1ª, 3ª and
+ * the finals 3ª, 4ª, 2ª, 1ª — so the rows are sorted by kick-off rather than by
+ * level. Real match rows win; a tie with no rows yet (a projected final) falls
+ * back to the published schedule.
+ */
+function playingOrder(tie, isFinal, position) {
+  const minuteOf = level => {
+    const iso = tie?.matchesByCategory?.[level]?.scheduled_at
+    if (iso) return new Date(iso).getTime()
+    const slot = isFinal ? finalSlot(level) : semifinalSlot(position, level)
+    if (!slot) return null
+    const [h, m] = slot.time.split(':').map(Number)
+    return h * 60 + m
+  }
+
+  return [...LEVELS].sort((a, b) => {
+    const ta = minuteOf(a), tb = minuteOf(b)
+    if (ta === null && tb === null) return a - b
+    if (ta === null) return 1
+    if (tb === null) return -1
+    return ta - tb || a - b       // same slot → division order, so it is stable
+  })
+}
+
+function TeamMatchup({ tie, placeholder = false, label, isFinal = false, seeds, position }) {
   const spec1 = placeholder ? TEAM_COMPOSITION.find(t => t.seed === seeds?.[0]) : null
   const spec2 = placeholder ? TEAM_COMPOSITION.find(t => t.seed === seeds?.[1]) : null
 
@@ -298,7 +336,7 @@ function TeamMatchup({ tie, placeholder = false, label, isFinal = false, seeds }
 
       {/* ── The four matches, pair against pair ── */}
       <ul className="divide-y divide-hairline border-t border-hairline">
-        {LEVELS.map(level => (
+        {playingOrder(tie, isFinal, position).map(level => (
           <DivisionDuel
             key={level}
             level={level}

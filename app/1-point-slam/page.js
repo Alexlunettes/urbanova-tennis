@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { buildSlamBracket, SLAM_SCHEDULE, participantLabel, halfOf } from '@/lib/slam'
+import { buildSlamBracket, SLAM_TIME, participantLabel, halfOf } from '@/lib/slam'
 import RealtimeRefresher from '@/app/components/RealtimeRefresher'
 import SlamBracket, { SlamSummary } from '@/app/components/SlamBracket'
 import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
@@ -57,16 +57,14 @@ export default async function SlamPage() {
           </div>
           <div className="min-w-44">
             <p className="font-display text-base text-fg">HORARIO</p>
-            <ul className="mt-1.5 space-y-1 text-[13px] text-fg-muted">
-              <li className="flex gap-2.5">
-                <span className="tabular font-mono text-fg">{SLAM_SCHEDULE.round_of_16.time}</span>
-                <span>Octavos de final</span>
-              </li>
-              <li className="flex gap-2.5">
-                <span className="tabular font-mono text-fg">{SLAM_SCHEDULE.quarterfinal.time}</span>
-                <span>Cuartos, semis y final</span>
-              </li>
-            </ul>
+            <p className="mt-1.5 flex items-baseline gap-2.5 text-[13px] text-fg-muted">
+              <span className="tabular font-mono text-xl text-fg">{SLAM_TIME.time}</span>
+              <span>domingo</span>
+            </p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-fg-muted">
+              Todo el cuadro se juega seguido a esa hora: octavos, cuartos,
+              semifinales y final.
+            </p>
           </div>
         </div>
       </Card>

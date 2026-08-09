@@ -58,14 +58,19 @@ is broken by total sets, then total games.
 
 The team advances, **not the pairs that won**. A pair can win its semifinal
 2–0 and still be out because its team lost the tie 3–1 — the final is contested
-by the four pairs of the *winning team*. Sunday's finals run 17:00 (4ª), 19:00
-(2ª), 21:00 (1ª) and 22:30 (3ª), all on Pista 1.
+by the four pairs of the *winning team*. Sunday's finals run **18:00** (3ª on
+Pista 1 and 4ª on Pista 2, simultaneously), **20:00** (2ª) and **21:30** (1ª),
+the last two on Pista 1. Note that is not division order, so anything listing
+them sorts by time.
 
 ## 1 Point Slam
 
 A separate **individual** knockout for sixteen players, played on the Sunday
-evening: round of 16 at 18:30, then quarterfinals, semifinals and final from
-20:30. It has its own page (`/1-point-slam`), its own tables and its own admin
+evening in a single block at **19:30** — one point per match, so the round of
+16, quarterfinals, semifinals and final follow each other without a break, and
+the UI deliberately shows that one time rather than a slot per round. It sits
+between the 18:00 and 20:00 finals. It has its own page (`/1-point-slam`), its
+own tables and its own admin
 tab; it does not touch the divisions, the equipos or the main bracket.
 
 Entrants reference existing `players` rows, so nobody is duplicated — a slam
