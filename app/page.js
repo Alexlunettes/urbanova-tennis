@@ -12,6 +12,10 @@ import { cn } from '@/lib/cn'
 
 export const revalidate = 60
 
+/** Post-tournament feedback form, opened in a new tab. */
+const FEEDBACK_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSewAy_qbUQAjjltjMlwUELCqlE0a-LVLLyDM4ZN90-R16OlWQ/viewform?usp=sharing&ouid=110800555888343312949'
+
 export default async function Home() {
   const [{ count: teamCount }, { count: playerCount }] = await Promise.all([
     supabase.from('teams').select('id',   { count: 'exact', head: true }),
@@ -81,6 +85,35 @@ export default async function Home() {
         </div>
 
         <Wave tone="surface" />
+      </section>
+
+      {/* ────────────────────────── FEEDBACK ─────────────────────────── */}
+      {/* Sits directly under the hero so it is the first thing after the fold,
+          but kept to a single quiet strip rather than a banner that competes
+          with the tournament itself. */}
+      <section className="bg-surface px-5 pt-10 sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-brand-200 bg-accent-soft px-6 py-5 text-center sm:flex-row sm:text-left dark:border-brand-500/25">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.1A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5Z" />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg text-fg">¿QUÉ TE HA PARECIDO?</p>
+              <p className="mt-0.5 text-[13.5px] leading-relaxed text-fg-muted">
+                Ya están publicadas las fotos de la edición 2026. Cuéntanos qué te ha parecido
+                el torneo y la web — nos ayuda a mejorar la próxima edición.
+              </p>
+            </div>
+            <Button href={FEEDBACK_FORM_URL} external size="md" className="shrink-0">
+              Danos tu opinión
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M7 17 17 7M9 7h8v8" />
+              </svg>
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* ──────────────────────────── STATS ──────────────────────────── */}

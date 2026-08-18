@@ -5,6 +5,13 @@ import { useState, useEffect } from 'react'
 /** First serve: Thursday 6 August, 17:15 on Pista 1. */
 const TOURNAMENT_START = new Date('2026-08-06T17:15:00+02:00')
 
+/**
+ * Last ball: the 1ª division final starts at 21:30 on Sunday the 9th, so the
+ * tournament is over once that evening is. Past this the hero stops claiming
+ * the tournament is being played and reports it as finished instead.
+ */
+const TOURNAMENT_END = new Date('2026-08-09T23:59:00+02:00')
+
 const pad = n => String(n).padStart(2, '0')
 
 export default function Countdown() {
@@ -12,10 +19,11 @@ export default function Countdown() {
 
   useEffect(() => {
     function tick() {
-      const diff = TOURNAMENT_START - new Date()
+      const now  = new Date()
+      const diff = TOURNAMENT_START - now
       setLeft(
         diff <= 0
-          ? { done: true }
+          ? { done: true, finished: now >= TOURNAMENT_END }
           : {
               days:    Math.floor(diff / 86_400_000),
               hours:   Math.floor(diff / 3_600_000) % 24,
@@ -32,6 +40,20 @@ export default function Countdown() {
   // Reserve the final height so the hero does not shift when the clock appears
   // after hydration.
   if (!left) return <div className="h-26 md:h-31" aria-hidden="true" />
+
+  // Over: no pulsing dot, no "live" green — it is a record now, not a feed.
+  if (left.finished) {
+    return (
+      <div className="flex h-26 items-center justify-center md:h-31">
+        <span className="inline-flex items-center gap-2.5 rounded-full border border-sand-300/60 bg-sand-50/70 px-5 py-2.5 dark:border-sand-400/25 dark:bg-sand-400/[0.07]">
+          <span aria-hidden="true">🏆</span>
+          <span className="font-display text-2xl tracking-wide text-sand-800 dark:text-sand-200">
+            TORNEO FINALIZADO
+          </span>
+        </span>
+      </div>
+    )
+  }
 
   if (left.done) {
     return (

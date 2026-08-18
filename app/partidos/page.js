@@ -105,7 +105,7 @@ export default async function PartidosPage({ searchParams }) {
       <PageHeader
         eyebrow="Calendario y resultados"
         title="PARTIDOS"
-        description="Toda la competición en un sitio: el calendario de la fase de grupos y el cuadro final. Los resultados se actualizan en directo."
+        description="Toda la competición en un sitio: el calendario de la fase de grupos y el cuadro final, con todos los resultados de la III edición."
       />
 
       <ViewTabs vista={vista} cat={cat} />

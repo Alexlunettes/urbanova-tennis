@@ -1,9 +1,16 @@
-import { NextResponse }  from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
-import { LEVELS }        from '@/lib/tournament'
+import { NextResponse }   from 'next/server'
+import { supabaseAdmin }  from '@/lib/supabase-admin'
+import { LEVELS }         from '@/lib/tournament'
+import { VOTING_CLOSED }  from '@/lib/awards'
 
 /**
  * Records one MVP vote, for one division.
+ *
+ * The 2026 vote is CLOSED (`VOTING_CLOSED` in lib/awards.js) and this endpoint
+ * refuses everything while that holds. The voting UI is gone from the site, but
+ * closing it here too is what actually stops a late vote landing and quietly
+ * changing a result the Palmarés already presents as final. Flip the flag to
+ * reopen for the next edition.
  *
  * There are four MVPs, one per division, so a visitor votes four times — once
  * in each. The UNIQUE index on (voter_token, level) is what keeps that to one
@@ -16,6 +23,13 @@ import { LEVELS }        from '@/lib/tournament'
  * vote for a 1ª-division player, or spend four votes inside one division.
  */
 export async function POST(request) {
+  if (VOTING_CLOSED) {
+    return NextResponse.json(
+      { error: 'La votación al MVP está cerrada.', code: 'voting_closed' },
+      { status: 403 },
+    )
+  }
+
   try {
     const { player_id, voter_token } = await request.json().catch(() => ({}))
 
