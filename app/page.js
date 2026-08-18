@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { CATEGORY_RULES, CATEGORY_META, CATEGORY_COLOR, LEVELS } from '@/lib/tournament'
+import { FEEDBACK, FEEDBACK_FORM_URL } from '@/lib/feedback'
 import Countdown from './components/Countdown'
 import FormatExplainer, { SquadKeyPoint } from './components/FormatExplainer'
 import Logo from './components/Logo'
@@ -11,10 +12,6 @@ import Badge from './components/ui/Badge'
 import { cn } from '@/lib/cn'
 
 export const revalidate = 60
-
-/** Post-tournament feedback form, opened in a new tab. */
-const FEEDBACK_FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSewAy_qbUQAjjltjMlwUELCqlE0a-LVLLyDM4ZN90-R16OlWQ/viewform?usp=sharing&ouid=110800555888343312949'
 
 export default async function Home() {
   const [{ count: teamCount }, { count: playerCount }] = await Promise.all([
@@ -64,13 +61,53 @@ export default async function Home() {
             domingo por la tarde, a pie de playa en Urbanova.
           </p>
 
-          <div className="animate-fade-up mt-11" style={{ animationDelay: '210ms' }}>
+          <div className="animate-fade-up mt-9" style={{ animationDelay: '210ms' }}>
             <Countdown />
           </div>
 
+          {/* Inside the hero, on the same centred axis as everything above it,
+              so it reads as part of the page rather than a strip bolted on
+              underneath. Whole card is the link — a bigger target on mobile. */}
           <div
-            className="animate-fade-up mt-11 flex flex-wrap justify-center gap-3"
+            className="animate-fade-up mt-9 flex justify-center"
             style={{ animationDelay: '260ms' }}
+          >
+            <a
+              href={FEEDBACK_FORM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                'group flex w-full max-w-xl items-center gap-4 rounded-2xl border px-5 py-4 text-left',
+                'border-brand-200 bg-accent-soft/80 backdrop-blur-sm transition-all duration-200',
+                'hover:-translate-y-0.5 hover:border-accent/45 hover:bg-accent-soft hover:shadow-md',
+                'dark:border-brand-500/25',
+              )}
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-fg shadow-sm">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.1A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5Z" />
+                </svg>
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-lg leading-tight text-fg">
+                  {FEEDBACK.title.toUpperCase()}
+                </span>
+                <span className="mt-0.5 block text-[13px] leading-relaxed text-fg-muted">
+                  {FEEDBACK.body}
+                </span>
+              </span>
+
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-accent transition-transform duration-200 group-hover:translate-x-0.5">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </span>
+            </a>
+          </div>
+          <div
+            className="animate-fade-up mt-7 flex flex-wrap justify-center gap-3"
+            style={{ animationDelay: '310ms' }}
           >
             <Button href="/partidos" size="lg">
               Ver calendario
@@ -82,38 +119,10 @@ export default async function Home() {
               Clasificación
             </Button>
           </div>
+
         </div>
 
         <Wave tone="surface" />
-      </section>
-
-      {/* ────────────────────────── FEEDBACK ─────────────────────────── */}
-      {/* Sits directly under the hero so it is the first thing after the fold,
-          but kept to a single quiet strip rather than a banner that competes
-          with the tournament itself. */}
-      <section className="bg-surface px-5 pt-10 sm:px-6">
-        <div className="mx-auto max-w-3xl">
-          <div className="flex flex-col items-center gap-4 rounded-2xl border border-brand-200 bg-accent-soft px-6 py-5 text-center sm:flex-row sm:text-left dark:border-brand-500/25">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/12 text-accent">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.1A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5Z" />
-              </svg>
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-display text-lg text-fg">¿QUÉ TE HA PARECIDO?</p>
-              <p className="mt-0.5 text-[13.5px] leading-relaxed text-fg-muted">
-                Ya están publicadas las fotos de la edición 2026. Cuéntanos qué te ha parecido
-                el torneo y la web — nos ayuda a mejorar la próxima edición.
-              </p>
-            </div>
-            <Button href={FEEDBACK_FORM_URL} external size="md" className="shrink-0">
-              Danos tu opinión
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M7 17 17 7M9 7h8v8" />
-              </svg>
-            </Button>
-          </div>
-        </div>
       </section>
 
       {/* ──────────────────────────── STATS ──────────────────────────── */}

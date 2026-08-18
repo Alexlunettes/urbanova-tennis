@@ -4,6 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import AnalyticsTracker from './components/AnalyticsTracker'
+import FeedbackPrompt from './components/FeedbackPrompt'
 import './globals.css'
 
 /* Bebas carries the tournament identity on display type; Geist handles all
@@ -81,6 +82,10 @@ export default function RootLayout({ children }) {
         <Navbar />
         <div id="contenido">{children}</div>
         <Footer />
+
+        {/* Follows the visitor across every page — many arrive straight on the
+            gallery and never see the homepage call-to-action. */}
+        <FeedbackPrompt />
 
         {/* Audience and performance data. Vercel's are cookieless; the
             first-party tracker logs anonymous page views for the /admin

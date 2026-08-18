@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { INTERVIEWS, INTERVIEW_DIR } from '@/lib/interviews'
 import { CATEGORY_META } from '@/lib/tournament'
 import PageHeader, { PageShell } from '@/app/components/ui/PageHeader'
 import EmptyState from '@/app/components/ui/EmptyState'
@@ -10,7 +9,7 @@ import Badge from '@/app/components/ui/Badge'
 import { cn } from '@/lib/cn'
 
 /**
- * Photos and interviews, in three clearly separated sections.
+ * Photos, one section per edition.
  *
  * The page keeps the name "Galería" — it is what people already look for, and
  * in Spanish it reads naturally as covering video as well as stills. The
@@ -18,9 +17,8 @@ import { cn } from '@/lib/cn'
  */
 
 const SECTIONS = [
-  { key: '2026',        label: 'Fotos 2026',  kind: 'photos' },
-  { key: '2025',        label: 'Fotos 2025',  kind: 'photos' },
-  { key: 'entrevistas', label: 'Entrevistas', kind: 'video'  },
+  { key: '2026', label: 'Fotos 2026' },
+  { key: '2025', label: 'Fotos 2025' },
 ]
 
 export default function GaleriaClient({ photosByYear = {} }) {
@@ -28,7 +26,7 @@ export default function GaleriaClient({ photosByYear = {} }) {
   const [lightbox, setLightbox] = useState(null)
 
   const active = SECTIONS.find(s => s.key === section) ?? SECTIONS[0]
-  const photos = active.kind === 'photos' ? (photosByYear[active.key] ?? []) : []
+  const photos = photosByYear[active.key] ?? []
 
   const isOpen = lightbox !== null
   const count  = photos.length
@@ -58,14 +56,14 @@ export default function GaleriaClient({ photosByYear = {} }) {
       <PageHeader
         eyebrow="Fotos y vídeo"
         title="GALERÍA"
-        description="Las imágenes del torneo y las entrevistas grabadas a pie de pista."
+        description="Todas las imágenes del torneo, edición por edición."
       />
 
       {/* ── Section tabs ── */}
       <div className="-mx-5 overflow-x-auto px-5 no-scrollbar sm:mx-0 sm:px-0">
         <div className="inline-flex min-w-max gap-1 rounded-2xl border border-hairline bg-surface-2 p-1">
           {SECTIONS.map(s => {
-            const n = s.kind === 'photos' ? (photosByYear[s.key] ?? []).length : INTERVIEWS.length
+            const n = (photosByYear[s.key] ?? []).length
             return (
               <button
                 key={s.key}
@@ -75,7 +73,7 @@ export default function GaleriaClient({ photosByYear = {} }) {
                   section === s.key ? 'bg-surface text-fg shadow-sm' : 'text-fg-muted hover:text-fg',
                 )}
               >
-                {s.kind === 'video' ? <VideoIcon /> : <CameraIcon small />}
+                <CameraIcon small />
                 {s.label}
                 {n > 0 && (
                   <span
@@ -94,9 +92,7 @@ export default function GaleriaClient({ photosByYear = {} }) {
       </div>
 
       <div className="mt-8">
-        {active.kind === 'video'
-          ? <Interviews />
-          : <PhotoGrid photos={photos} year={active.key} onOpen={setLightbox} />}
+        <PhotoGrid photos={photos} year={active.key} onOpen={setLightbox} />
       </div>
 
       {isOpen && photos[lightbox] && (
@@ -218,73 +214,6 @@ function NavButton({ side, onClick, disabled }) {
   )
 }
 
-/* ────────────────────────── INTERVIEWS ────────────────────────── */
-
-function Interviews() {
-  if (INTERVIEWS.length === 0) {
-    return (
-      <EmptyState
-        icon={<VideoIcon large />}
-        title="Entrevistas próximamente"
-        description={`Durante el torneo grabaremos entrevistas cortas a pie de pista. Aparecerán aquí en cuanto estén listas — se añaden en lib/interviews.js, con el vídeo en ${INTERVIEW_DIR} o un enlace incrustado.`}
-      />
-    )
-  }
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {INTERVIEWS.map((interview, i) => (
-        <InterviewCard key={interview.src ?? interview.embed ?? i} interview={interview} />
-      ))}
-    </div>
-  )
-}
-
-function InterviewCard({ interview }) {
-  const { title, subtitle, src, embed, poster, duration, division, day } = interview
-
-  return (
-    <article className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-xs transition-shadow hover:shadow-md">
-      <div className="relative aspect-video bg-ink-950">
-        {embed ? (
-          <iframe
-            src={embed}
-            title={title}
-            loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full"
-          />
-        ) : (
-          <video
-            src={src}
-            poster={poster}
-            controls
-            preload="metadata"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-        {duration && (
-          <span className="tabular pointer-events-none absolute bottom-2 right-2 rounded bg-ink-950/75 px-1.5 py-0.5 font-mono text-[10px] text-white">
-            {duration}
-          </span>
-        )}
-      </div>
-
-      <div className="p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {division && (
-            <Badge tone="neutral" size="xs">{CATEGORY_META[division]?.short ?? division}</Badge>
-          )}
-          {day && <span className="text-[11px] text-fg-subtle">{day}</span>}
-        </div>
-        <h3 className="mt-1.5 truncate font-display text-lg text-fg">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-[12px] text-fg-muted">{subtitle}</p>}
-      </div>
-    </article>
-  )
-}
-
 /* ─────────────────────────── ICONS ─────────────────────────── */
 
 function CameraIcon({ small = false }) {
@@ -297,12 +226,3 @@ function CameraIcon({ small = false }) {
   )
 }
 
-function VideoIcon({ large = false }) {
-  const s = large ? 20 : 14
-  return (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
-      <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
-      <path d="m15.5 10.5 6-3.2v9.4l-6-3.2z" />
-    </svg>
-  )
-}

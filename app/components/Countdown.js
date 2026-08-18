@@ -14,10 +14,21 @@ const TOURNAMENT_END = new Date('2026-08-09T23:59:00+02:00')
 
 const pad = n => String(n).padStart(2, '0')
 
+/**
+ * Whether the tournament is already over, decided once at module load.
+ *
+ * `TOURNAMENT_END` is a fixed date in the past, so the server and the browser
+ * always agree and there is no hydration mismatch — which means the finished
+ * state can render straight away, server-side, with no waiting effect and none
+ * of the tall placeholder the live clock needs to avoid layout shift.
+ */
+const IS_OVER = Date.now() >= TOURNAMENT_END.getTime()
+
 export default function Countdown() {
   const [left, setLeft] = useState(null)
 
   useEffect(() => {
+    if (IS_OVER) return
     function tick() {
       const now  = new Date()
       const diff = TOURNAMENT_START - now
@@ -37,14 +48,11 @@ export default function Countdown() {
     return () => clearInterval(id)
   }, [])
 
-  // Reserve the final height so the hero does not shift when the clock appears
-  // after hydration.
-  if (!left) return <div className="h-26 md:h-31" aria-hidden="true" />
-
   // Over: no pulsing dot, no "live" green — it is a record now, not a feed.
-  if (left.finished) {
+  // Rendered without the tall reservation, because no clock will replace it.
+  if (IS_OVER) {
     return (
-      <div className="flex h-26 items-center justify-center md:h-31">
+      <div className="flex items-center justify-center">
         <span className="inline-flex items-center gap-2.5 rounded-full border border-sand-300/60 bg-sand-50/70 px-5 py-2.5 dark:border-sand-400/25 dark:bg-sand-400/[0.07]">
           <span aria-hidden="true">🏆</span>
           <span className="font-display text-2xl tracking-wide text-sand-800 dark:text-sand-200">
@@ -54,6 +62,10 @@ export default function Countdown() {
       </div>
     )
   }
+
+  // Reserve the final height so the hero does not shift when the clock appears
+  // after hydration.
+  if (!left) return <div className="h-26 md:h-31" aria-hidden="true" />
 
   if (left.done) {
     return (
